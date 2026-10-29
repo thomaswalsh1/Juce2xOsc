@@ -6,6 +6,12 @@
               pluginFormats="buildVST3">
   <MAINGROUP id="TjXxJB" name="2xOscSynth">
     <GROUP id="{4769872B-8E3D-B317-981A-86892DE3701C}" name="Source">
+      <GROUP id="{E35F3BAC-BDBD-B4CB-9276-24A3B2ED401C}" name="Assets">
+        <FILE id="myUyBa" name="knobOptimized.svg" compile="0" resource="1"
+              file="../../../../../../Documents/knobOptimized.svg"/>
+        <FILE id="E3LN2G" name="SpecialGothicExpandedOne-Regular.ttf" compile="0"
+              resource="1" file="../../../../../../Documents/SpecialGothicExpandedOne-Regular.ttf"/>
+      </GROUP>
       <FILE id="NQ87Tb" name="SynthVoice.cpp" compile="1" resource="0" file="Source/SynthVoice.cpp"/>
       <FILE id="sLcwoF" name="SynthVoice.h" compile="0" resource="0" file="Source/SynthVoice.h"/>
       <GROUP id="{864E4953-736C-294B-A8E2-4307517724D1}" name="Data">

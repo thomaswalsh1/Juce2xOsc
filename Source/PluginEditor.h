@@ -21,12 +21,17 @@ class Tabs1 : public juce::TabbedComponent
 {
 public:
     Tabs1() : juce::TabbedComponent(juce::TabbedButtonBar::TabsAtTop) {
-        setTabBarDepth(30);
+        
+        setTabBarDepth(20);
 
-        addTab("Osc", juce::Colours::royalblue, &oscPage, false);
-        addTab("FM", juce::Colours::royalblue, &fmPage, false);
-
+        addTab("Osc", Style::accent, &oscPage, false);
+        addTab("FM", Style::accent, &fmPage, false);
+        
         setCurrentTabIndex(0, false);
+    }
+
+    void paint(juce::Graphics& g) override {
+        g.fillAll(Style::background2);
     }
 
     ~Tabs1() override = default;
@@ -41,10 +46,14 @@ class Tabs2 : public juce::TabbedComponent
 public:
     Tabs2() : juce::TabbedComponent(juce::TabbedButtonBar::TabsAtTop) {
 
-        addTab("Filter", juce::Colours::royalblue, &filterPage, false);
-        setTabBarDepth(30);
+        addTab("Filter", Style::accent, &filterPage, false);
+        setTabBarDepth(20);
         setCurrentTabIndex(0, false);
     }
+
+	void paint(juce::Graphics& g) override {
+		g.fillAll(Style::background2);
+	}
 
     ~Tabs2() override = default;
 private:
@@ -79,6 +88,10 @@ private:
 
     // header
     juce::Label header;
+    juce::Label author;
+
+    // secondary background
+	juce::Rectangle<int> secondaryBackground;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (_2xOscSynthAudioProcessorEditor)
 };

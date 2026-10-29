@@ -13,6 +13,7 @@
 #include <JuceHeader.h>
 #include "CustomLookAndFeel.h"
 
+
 class OscComponent : public juce::Component {
 public:
     OscComponent(juce::String name);
@@ -26,6 +27,10 @@ private:
 
     // Labels for each knob
     juce::Label waveTypeLabel;
+
+    // other big label
+    juce::Label detune;
+
     juce::Label coarseTuneLabel;
     juce::Label fineTuneLabel;
     juce::Label attackLabel;
@@ -41,6 +46,10 @@ private:
     juce::Slider decay;
     juce::Slider sustain;
     juce::Slider release;
+
+    // colored areas
+    juce::Rectangle<int> detuneArea;
+    juce::Rectangle<int> adsrArea;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OscComponent)
 };
@@ -62,6 +71,7 @@ private:
     OscComponent osc2{ "Osc 2" };
 
     juce::ToggleButton enableAdsr2;
+	juce::Label mixLabel;
     juce::Slider mixControl;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OscPage)

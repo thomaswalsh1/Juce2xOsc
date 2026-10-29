@@ -21,8 +21,17 @@ _2xOscSynthAudioProcessorEditor::_2xOscSynthAudioProcessorEditor (_2xOscSynthAud
 
     // header
     header.setText("2xOsc", juce::dontSendNotification);
-    header.setJustificationType(juce::Justification::centred);
+    header.setFont(customLookAndFeel.getHeadingFont(28.0f));
+    header.setColour(juce::Label::textColourId, Style::textMain);
+    header.setJustificationType(juce::Justification::centredLeft);
     addAndMakeVisible(header);
+    
+    // author
+    author.setText("By Tom", juce::dontSendNotification);
+	author.setFont(customLookAndFeel.getHeadingFont(14.0f));
+    author.setColour(juce::Label::textColourId, Style::surface);
+    author.setJustificationType(juce::Justification::centredLeft);
+    addAndMakeVisible(author);
 
     // tabs
     addAndMakeVisible(tabs1);
@@ -44,8 +53,8 @@ void _2xOscSynthAudioProcessorEditor::paint (juce::Graphics& g)
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (Style::background);
 
-    g.setColour (Style::textMain);
-    g.setFont (juce::FontOptions (15.0f));
+    g.setColour(Style::background2);
+    g.fillRect(secondaryBackground);
 }
 
 void _2xOscSynthAudioProcessorEditor::resized()
@@ -53,8 +62,13 @@ void _2xOscSynthAudioProcessorEditor::resized()
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
     auto bounds = getLocalBounds();
-    auto heading = bounds.removeFromTop(30);
-    header.setBounds(heading);
+    auto headingSection = bounds.removeFromTop(48);
+	headingSection.reduce(10, 0);
+    header.setBounds(headingSection.removeFromLeft(80));
+    author.setBounds(headingSection.removeFromLeft(104));
+    
+	secondaryBackground = bounds.removeFromTop(13);
+
     int leftWidth = bounds.getWidth() / 2;
     tabs1.setBounds(bounds.removeFromLeft(leftWidth));
     tabs2.setBounds(bounds);
