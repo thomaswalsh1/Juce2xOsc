@@ -70,3 +70,13 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int sta
         outputBuffer.addFrom(i, startSample, synthBuffer, i, 0, numSamples);
     }
 }
+
+void SynthVoice::setOscParameters(int oscIndex, const OscParameters& params) {
+    if (oscIndex < 0 || oscIndex >= NUM_OSCS) {
+        DBG("Invalid oscillator index: " << oscIndex);
+        return;
+    }
+
+	osc[oscIndex].setWaveform(static_cast<WaveformType>(params.wave));
+	osc[oscIndex].setDetune(params.coarse, params.fine);
+}

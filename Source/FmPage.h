@@ -18,7 +18,7 @@
 class FmPage  : public juce::Component
 {
 public:
-    FmPage();
+    FmPage(juce::AudioProcessorValueTreeState& apvts);
     ~FmPage() override;
 
     void paint (juce::Graphics&) override;

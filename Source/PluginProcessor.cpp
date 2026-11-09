@@ -9,6 +9,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+
 //==============================================================================
 _2xOscSynthAudioProcessor::_2xOscSynthAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -19,9 +20,13 @@ _2xOscSynthAudioProcessor::_2xOscSynthAudioProcessor()
                       #endif
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
-                       )
+                       ), apvts (*this, nullptr, "Parameters", createParameterLayout())
 #endif
 {
+    // load params
+    
+
+
     synth.addSound(new SynthSound());
     for (int i = 0; i < NUM_VOICES; i++) {
         synth.addVoice(new SynthVoice());
@@ -142,11 +147,28 @@ void _2xOscSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 {
     juce::ScopedNoDenormals noDenormals;
 
+    // parameters
+    OscParameters osc1, osc2;
+	osc1.wave = apvts.getRawParameterValue("OSC1_WAVE")->load();
+	osc2.wave = apvts.getRawParameterValue("OSC2_WAVE")->load();
+	osc1.coarse = apvts.getRawParameterValue("OSC1_COARSE")->load();
+	osc2.coarse = apvts.getRawParameterValue("OSC2_COARSE")->load();
+	osc1.fine = apvts.getRawParameterValue("OSC1_FINE")->load();
+	osc2.fine = apvts.getRawParameterValue("OSC2_FINE")->load();
+
+
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
+
+	for (int i = 0; i < synth.getNumVoices(); i++) {
+		if (auto voice = dynamic_cast<SynthVoice*>(synth.getVoice(i))) {
+			voice->setOscParameters(0, osc1);
+			voice->setOscParameters(1, osc2);
+		}
+	}
     
     synth.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
 }
@@ -181,4 +203,22 @@ void _2xOscSynthAudioProcessor::setStateInformation (const void* data, int sizeI
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new _2xOscSynthAudioProcessor();
+}
+
+juce::AudioProcessorValueTreeState::ParameterLayout _2xOscSynthAudioProcessor::createParameterLayout()
+{
+    juce::AudioProcessorValueTreeState::ParameterLayout layout;
+    
+    // parameters
+
+    layout.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{ "OSC1_WAVE", 1 }, "Osc 1 Wave", 0, 2, 0));
+    layout.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{ "OSC2_WAVE", 1 }, "Osc 2 Wave", 0, 2, 0));
+
+    layout.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{ "OSC1_COARSE", 1 }, "Osc 1 Coarse", -36, 36, 0));
+    layout.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{ "OSC2_COARSE", 1 }, "Osc 2 Coarse", -36, 36, 0));
+	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC1_FINE", 1 }, "Osc 1 Fine", -50.0f, 50.0f, 0.0f));
+	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_FINE", 1 }, "Osc 2 Fine", -50.0f, 50.0f, 0.0f));
+
+
+    return layout;
 }

@@ -14,11 +14,35 @@ Oscillator::Oscillator() {
     setWaveform(Sine);
 }
 
+void Oscillator::setDetune(int coarse, float fine) {
+	if (coarse == osc_coarse && fine == osc_fine) {
+		return;
+	}
+	osc_coarse = coarse;
+	osc_fine = fine;
+
+	updateFrequency(false);
+}
+
 void Oscillator::setFrequency(float hz, bool force) {
-    osc.setFrequency(hz, force);
+    // sets the frequency BY THE NOTE
+	osc_base = hz;
+    updateFrequency(force);
+}
+
+void Oscillator::updateFrequency(bool force) {
+	const float semitones = osc_coarse + osc_fine / 100.0f;
+    osc.setFrequency(osc_base * std::pow(2.0f, semitones / 12.0f), force);
 }
 
 void Oscillator::setWaveform(WaveformType type) {
+	if (initialized && type == osc_waveform) {
+		return; // No change needed
+	}
+
+    initialized = true;
+	osc_waveform = type;
+
     switch (type)
     {
     case WaveformType::Sine:

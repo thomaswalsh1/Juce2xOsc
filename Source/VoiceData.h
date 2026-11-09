@@ -34,6 +34,7 @@ public:
     void pitchWheelMoved(int newPitchWheelValue) override;
     void controllerMoved(int controllerNumber, int newControllerValue) override;
     void renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int startSample, int numSamples) override;
+	void setOscParameters(int oscIndex, const OscParameters& params);
 private:
     Oscillator osc[NUM_OSCS];
 

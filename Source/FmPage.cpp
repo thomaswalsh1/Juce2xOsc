@@ -12,7 +12,7 @@
 #include "FmPage.h"
 
 //==============================================================================
-FmPage::FmPage()
+FmPage::FmPage(juce::AudioProcessorValueTreeState& apvts)
 {
     // In your constructor, you should add any child components, and
     // initialise any special settings that your component needs.

@@ -11,7 +11,7 @@
 
 //==============================================================================
 _2xOscSynthAudioProcessorEditor::_2xOscSynthAudioProcessorEditor (_2xOscSynthAudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p)
+	: AudioProcessorEditor(&p), audioProcessor(p), tabs1(p.apvts), tabs2(p.apvts)
 {
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.

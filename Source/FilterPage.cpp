@@ -12,7 +12,7 @@
 #include "FilterPage.h"
 
 //==============================================================================
-FilterPage::FilterPage()
+FilterPage::FilterPage(juce::AudioProcessorValueTreeState& apvts)
 {
     // In your constructor, you should add any child components, and
     // initialise any special settings that your component needs.

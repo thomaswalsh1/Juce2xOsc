@@ -18,7 +18,7 @@
 class FilterPage  : public juce::Component
 {
 public:
-    FilterPage();
+    FilterPage(juce::AudioProcessorValueTreeState& apvts);
     ~FilterPage() override;
 
     void paint (juce::Graphics&) override;

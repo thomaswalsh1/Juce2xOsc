@@ -20,7 +20,7 @@ void setupSmallerLabel(juce::Label& label, juce::String text)
     label.setFont(juce::FontOptions(Style::GothicFontName, 12.0f, juce::Font::bold));
 }
 
-OscComponent::OscComponent(juce::String name)
+OscComponent::OscComponent(juce::String name, juce::AudioProcessorValueTreeState& apvts)
 {
 	juce::LookAndFeel& lnf = getLookAndFeel();
 
@@ -103,6 +103,11 @@ OscComponent::OscComponent(juce::String name)
     release.setSliderStyle(juce::Slider::SliderStyle::RotaryVerticalDrag);
     release.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
     addAndMakeVisible(release);
+	
+	// attachments
+	waveTypeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, name + "_WAVE", waveType);
+	coarseTuneAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, name + "_COARSE", coarseTune);
+	fineTuneAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, name + "_FINE", fineTune);
 }
 
 OscComponent::~OscComponent()
@@ -198,7 +203,8 @@ void OscComponent::resized()
 }
 
 //==============================================================================
-OscPage::OscPage()
+OscPage::OscPage(juce::AudioProcessorValueTreeState& apvts)
+    : apvts(apvts)
 {
     setLookAndFeel(&customLookAndFeel);
 

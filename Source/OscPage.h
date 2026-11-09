@@ -16,7 +16,7 @@
 
 class OscComponent : public juce::Component {
 public:
-    OscComponent(juce::String name);
+    OscComponent(juce::String name, juce::AudioProcessorValueTreeState& apvts);
     ~OscComponent() override;
 
     void paint(juce::Graphics&) override;
@@ -40,8 +40,14 @@ private:
 
     // Sliders
     juce::Slider waveType;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> waveTypeAttachment;
+
     juce::Slider coarseTune;
+	std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> coarseTuneAttachment;
+
     juce::Slider fineTune;
+	std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> fineTuneAttachment;
+
     juce::Slider attack;
     juce::Slider decay;
     juce::Slider sustain;
@@ -58,7 +64,7 @@ private:
 class OscPage : public juce::Component
 {
 public:
-    OscPage();
+    OscPage(juce::AudioProcessorValueTreeState& apvts);
     ~OscPage() override;
 
     void paint(juce::Graphics&) override;
@@ -66,9 +72,10 @@ public:
 
 private:
     CustomLookAndFeel customLookAndFeel;
+    juce::AudioProcessorValueTreeState& apvts;
 
-    OscComponent osc1{ "Osc 1" };
-    OscComponent osc2{ "Osc 2" };
+    OscComponent osc1{ "OSC1", apvts };
+    OscComponent osc2{ "OSC2", apvts };
 
     juce::ToggleButton enableAdsr2;
 	juce::Label mixLabel;

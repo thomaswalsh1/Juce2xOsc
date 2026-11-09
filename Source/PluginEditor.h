@@ -20,7 +20,7 @@
 class Tabs1 : public juce::TabbedComponent
 {
 public:
-    Tabs1() : juce::TabbedComponent(juce::TabbedButtonBar::TabsAtTop) {
+    Tabs1(juce::AudioProcessorValueTreeState &apvts) : juce::TabbedComponent(juce::TabbedButtonBar::TabsAtTop), oscPage(apvts), fmPage(apvts) {
         
         setTabBarDepth(20);
 
@@ -44,7 +44,7 @@ private:
 class Tabs2 : public juce::TabbedComponent
 {
 public:
-    Tabs2() : juce::TabbedComponent(juce::TabbedButtonBar::TabsAtTop) {
+    Tabs2(juce::AudioProcessorValueTreeState& apvts) : juce::TabbedComponent(juce::TabbedButtonBar::TabsAtTop), filterPage(apvts) {
 
         addTab("Filter", Style::accent, &filterPage, false);
         setTabBarDepth(20);
