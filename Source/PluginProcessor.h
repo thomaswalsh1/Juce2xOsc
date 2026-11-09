@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "VoiceData.h"
 #include <JuceHeader.h>
 
 //==============================================================================
@@ -57,6 +58,9 @@ public:
 private:
     //==============================================================================
 
+    juce::Synthesiser synth;
+
+    static constexpr int NUM_VOICES = 12;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (_2xOscSynthAudioProcessor)
 };

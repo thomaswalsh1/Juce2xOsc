@@ -12,11 +12,11 @@
         <FILE id="E3LN2G" name="SpecialGothicExpandedOne-Regular.ttf" compile="0"
               resource="1" file="../../../../../../Documents/SpecialGothicExpandedOne-Regular.ttf"/>
       </GROUP>
-      <FILE id="NQ87Tb" name="SynthVoice.cpp" compile="1" resource="0" file="Source/SynthVoice.cpp"/>
-      <FILE id="sLcwoF" name="SynthVoice.h" compile="0" resource="0" file="Source/SynthVoice.h"/>
       <GROUP id="{864E4953-736C-294B-A8E2-4307517724D1}" name="Data">
         <FILE id="ZXftZc" name="OscData.cpp" compile="1" resource="0" file="Source/OscData.cpp"/>
         <FILE id="oTiFvk" name="OscData.h" compile="0" resource="0" file="Source/OscData.h"/>
+        <FILE id="zHphAx" name="VoiceData.cpp" compile="1" resource="0" file="Source/VoiceData.cpp"/>
+        <FILE id="r2CNhB" name="VoiceData.h" compile="0" resource="0" file="Source/VoiceData.h"/>
       </GROUP>
       <GROUP id="{9392EA37-B91A-6F6A-E979-22CE9279B09F}" name="UI">
         <FILE id="ldqWBI" name="CustomLookAndFeel.h" compile="0" resource="0"
@@ -49,6 +49,7 @@
     <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_dsp" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
     <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
@@ -75,6 +76,7 @@
         <MODULEPATH id="juce_graphics" path="../../../../../../../../Software/Software Packages/JUCE/modules"/>
         <MODULEPATH id="juce_gui_basics" path="../../../../../../../../Software/Software Packages/JUCE/modules"/>
         <MODULEPATH id="juce_gui_extra" path="../../../../../../../../Software/Software Packages/JUCE/modules"/>
+        <MODULEPATH id="juce_dsp" path="../../../../../../../../Software/Software Packages/JUCE/modules"/>
       </MODULEPATHS>
     </VS2026>
   </EXPORTFORMATS>
