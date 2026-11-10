@@ -80,6 +80,7 @@ OscComponent::OscComponent(juce::String name, juce::AudioProcessorValueTreeState
     attack.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
     addAndMakeVisible(attack);
 
+
 	setupSmallerLabel(decayLabel, "Decay");
 	addAndMakeVisible(decayLabel);
 	decay.setColour(juce::Slider::textBoxOutlineColourId, Style::textSecondary);
@@ -108,6 +109,10 @@ OscComponent::OscComponent(juce::String name, juce::AudioProcessorValueTreeState
 	waveTypeAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, name + "_WAVE", waveType);
 	coarseTuneAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, name + "_COARSE", coarseTune);
 	fineTuneAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, name + "_FINE", fineTune);
+	attackAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, name + "_ATTACK", attack);
+	decayAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, name + "_DECAY", decay);
+	sustainAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, name + "_SUSTAIN", sustain);
+	releaseAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, name + "_RELEASE", release);
 }
 
 OscComponent::~OscComponent()

@@ -11,6 +11,7 @@
 #include "OscData.h"
 
 Oscillator::Oscillator() {
+	adsr.setSampleRate(44100.0f);
     setWaveform(Sine);
 }
 
@@ -22,6 +23,21 @@ void Oscillator::setDetune(int coarse, float fine) {
 	osc_fine = fine;
 
 	updateFrequency(false);
+}
+
+void Oscillator::setAdsr(float attack, float decay, float sustain, float release) {
+    osc_attack = attack;
+	osc_decay = decay;
+	osc_sustain = sustain;
+	osc_release = release;
+	
+	// Update ADSR parameters
+	adsr.setParameters(juce::ADSR::Parameters {
+		osc_attack,
+		osc_decay,
+		osc_sustain,
+		osc_release
+	});
 }
 
 void Oscillator::setFrequency(float hz, bool force) {
@@ -40,7 +56,6 @@ void Oscillator::setWaveform(WaveformType type) {
 		return; // No change needed
 	}
 
-    initialized = true;
 	osc_waveform = type;
 
     switch (type)
@@ -54,17 +69,23 @@ void Oscillator::setWaveform(WaveformType type) {
         break;
 
     case WaveformType::Square:
-        osc.initialise([](float x) { return x < 0 ? -1.0f : 1.0f; }, 128);
+        osc.initialise([](float x) { return x < 0.0f ? -1.0f : 1.0f; }, 128);
         break;
     }
+	initialized = true;
 }
 
 void Oscillator::prepare(const juce::dsp::ProcessSpec& spec) {
     osc.prepare(spec);
+
+	// adsr setup
+    adsr.setSampleRate(spec.sampleRate);
+	setAdsr(osc_attack, osc_decay, osc_sustain, osc_release);
 }
 
 void Oscillator::reset() {
     osc.reset();
+    adsr.reset();
 }
 
 

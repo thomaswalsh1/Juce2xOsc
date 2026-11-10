@@ -156,6 +156,16 @@ void _2xOscSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 	osc1.fine = apvts.getRawParameterValue("OSC1_FINE")->load();
 	osc2.fine = apvts.getRawParameterValue("OSC2_FINE")->load();
 
+    // adsr
+	osc1.attack = apvts.getRawParameterValue("OSC1_ATTACK")->load();
+	osc2.attack = apvts.getRawParameterValue("OSC2_ATTACK")->load();
+	osc1.decay = apvts.getRawParameterValue("OSC1_DECAY")->load();
+	osc2.decay = apvts.getRawParameterValue("OSC2_DECAY")->load();
+	osc1.sustain = apvts.getRawParameterValue("OSC1_SUSTAIN")->load();
+	osc2.sustain = apvts.getRawParameterValue("OSC2_SUSTAIN")->load();
+	osc1.release = apvts.getRawParameterValue("OSC1_RELEASE")->load();
+	osc2.release = apvts.getRawParameterValue("OSC2_RELEASE")->load();
+
 
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
@@ -219,6 +229,14 @@ juce::AudioProcessorValueTreeState::ParameterLayout _2xOscSynthAudioProcessor::c
 	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC1_FINE", 1 }, "Osc 1 Fine", -50.0f, 50.0f, 0.0f));
 	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_FINE", 1 }, "Osc 2 Fine", -50.0f, 50.0f, 0.0f));
 
+	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC1_ATTACK", 1 }, "Osc 1 Attack", 0.001f, 5.0f, 0.005f));
+	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_ATTACK", 1 }, "Osc 2 Attack", 0.001f, 5.0f, 0.005f));
+	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC1_DECAY", 1 }, "Osc 1 Decay", 0.001f, 5.0f, 0.1f));
+	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_DECAY", 1 }, "Osc 2 Decay", 0.001f, 5.0f, 0.1f));
+	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC1_SUSTAIN", 1 }, "Osc 1 Sustain", 0.0f, 1.0f, 0.3f));
+	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_SUSTAIN", 1 }, "Osc 2 Sustain", 0.0f, 1.0f, 0.3f));
+	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC1_RELEASE", 1 }, "Osc 1 Release", 0.001f, 5.0f, 0.015f));
+	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_RELEASE", 1 }, "Osc 2 Release", 0.001f, 5.0f, 0.015f));
 
     return layout;
 }
