@@ -20,6 +20,9 @@ void SynthVoice::prepareToPlay(double sampleRate, int samplesPerBlock, int outpu
     for (int i = 0; i < NUM_OSCS; i++) {
         osc[i].prepare(spec);
     }
+
+	mixSmoothed.reset(sampleRate, 0.2);
+
 }
 
 bool SynthVoice::canPlaySound(juce::SynthesiserSound* sound) {
@@ -62,63 +65,20 @@ void SynthVoice::controllerMoved(int controllerNumber, int newControllerValue) {
 }
 
 void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int startSample, int numSamples) {
-    if (!isVoiceActive())
-        return;
+    if (!isVoiceActive()) return;
 
-	// check if we have to stop the voice
-	bool isOscActive = false;
-	for (int i = 0; i < NUM_OSCS; i++) {
-		if (osc[i].isActive()) {
-			isOscActive = true;
-			break;
-		}
-	}
-    if (!isOscActive) {
-		clearCurrentNote();
-		level = 0.0f;
-		for (int i = 0; i < NUM_OSCS; i++) {
-			osc[i].reset();
-		}
-		return;
+    for (int s = 0; s < numSamples; ++s)
+    {
+        const float m = mixSmoothed.getNextValue();
+        const float sample = (osc[0].processSample() * (1.0f - m)
+            + osc[1].processSample() * m) * level * 0.25f;
+
+        for (int ch = 0; ch < outputBuffer.getNumChannels(); ++ch)
+            outputBuffer.addSample(ch, startSample + s, sample);
     }
 
-
-    synthBuffer.setSize(outputBuffer.getNumChannels(), numSamples, false, false, true);
-    synthBuffer.clear();
-
-    // put that buffer into a block
-    juce::dsp::AudioBlock<float> block{ synthBuffer };
-	juce::AudioBuffer<float> tempBuffer(outputBuffer.getNumChannels(), numSamples);
-	juce::dsp::AudioBlock<float> tempBlock{tempBuffer};
-
-    for (int i = 0; i < NUM_OSCS; i++) {
-        tempBuffer.clear();
-		// process the oscillator into the temp block
-        osc[i].process(juce::dsp::ProcessContextNonReplacing<float> (tempBlock, tempBlock));
-        // add to the main one
-		block.add(tempBlock);
-    }
-
-    synthBuffer.applyGain(level * 0.3f);
-
-    for (int i = 0; i < outputBuffer.getNumChannels(); ++i) {
-        outputBuffer.addFrom(i, startSample, synthBuffer, i, 0, numSamples);
-    }
-
-	bool stillGoing = false;
-	for (int i = 0; i < NUM_OSCS; i++) {
-		if (osc[i].isActive()) {
-			stillGoing = true;
-			break;
-		}
-	}
-	if (!stillGoing) {
-		clearCurrentNote();
-		level = 0.0f;
-		for (int i = 0; i < NUM_OSCS; i++) {
-			osc[i].reset();
-		}
-	}
+    if (!osc[0].isActive() && !osc[1].isActive())
+        clearCurrentNote();
 }
 
 void SynthVoice::setOscParameters(int oscIndex, const OscParameters& params) {
@@ -137,9 +97,13 @@ void SynthVoice::setOscParameters(int oscIndex, const OscParameters& params) {
 	else {
 		osc[oscIndex].setAdsr(params.attack, params.decay, params.sustain, params.release);
 	}
-	osc[oscIndex].setAdsr(params.attack, params.decay, params.sustain, params.release);
 }
 
 void SynthVoice::setAdsrSync(bool sync) {
 	adsrSync = sync;
+}
+    
+void SynthVoice::updateMix(float newMix)
+{
+	mixSmoothed.setTargetValue(newMix);
 }

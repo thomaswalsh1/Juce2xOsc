@@ -91,6 +91,7 @@ private:
 
 	juce::Label mixLabel;
     juce::Slider mixControl;
+	std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> mixControlAttachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OscPage)
 };

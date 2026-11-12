@@ -168,6 +168,8 @@ void _2xOscSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 
 	bool adsrSync = apvts.getRawParameterValue("ADSR_Sync")->load();
 
+	float mix = apvts.getRawParameterValue("OSC_MIX")->load();
+
 
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
@@ -188,6 +190,7 @@ void _2xOscSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 
 			voice->setOscParameters(0, osc1);
 			voice->setOscParameters(1, osc2);
+			voice->updateMix(mix);
 		}
 	}
     
@@ -250,5 +253,8 @@ juce::AudioProcessorValueTreeState::ParameterLayout _2xOscSynthAudioProcessor::c
 	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_RELEASE", 1 }, "Osc 2 Release", 0.001f, 5.0f, 0.015f));
 
 	layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ "ADSR_Sync", 1 }, "ADSR Sync", false));
+
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC_MIX", 1 }, "OSC Mix", 0.0f, 1.0f, 0.5f));
+
     return layout;
 }

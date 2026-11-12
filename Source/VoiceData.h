@@ -36,15 +36,15 @@ public:
     void renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int startSample, int numSamples) override;
 	void setOscParameters(int oscIndex, const OscParameters& params);
     void setAdsrSync(bool sync);
+    void updateMix(float newMix);
 private:
     Oscillator osc[NUM_OSCS];
 
-    juce::AudioBuffer<float> synthBuffer;
     
     int currentNote = 0;
 	float currentFrequency = 0.0f;
     float level = 0.0f;
 
 	bool adsrSync = false;
-
+    juce::SmoothedValue<float> mixSmoothed;
 };

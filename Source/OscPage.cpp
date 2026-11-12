@@ -249,6 +249,8 @@ OscPage::OscPage(juce::AudioProcessorValueTreeState& apvts)
 	adsrSync.onClick = updateAdsrSync;
 	updateAdsrSync();
 
+	mixControlAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, "OSC_MIX", mixControl);
+
 }
 
 OscPage::~OscPage()

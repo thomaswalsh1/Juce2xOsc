@@ -40,21 +40,8 @@ public:
     void prepare(const juce::dsp::ProcessSpec& spec);
     void reset();
 
-    template <typename ProcessContext>
-    void process(const ProcessContext& context) {
-		auto& inputBlock = context.getInputBlock();
-        auto &output_block = context.getOutputBlock();
-		auto numSumples = output_block.getNumSamples();
-		auto numChannels = output_block.getNumChannels();
-
-		for (size_t sample = 0; sample < numSumples; ++sample) {
-			auto raw = osc.processSample(0.0f);
-            float envelope = adsr.getNextSample();
-			float finalSample = raw * envelope;
-			for (size_t channel = 0; channel < numChannels; ++channel) {
-				output_block.setSample(channel, sample, finalSample);
-			}
-		}
+    float processSample() {
+		return osc.processSample(0.0f) * adsr.getNextSample();
     }
 private:
     juce::dsp::Oscillator<float> osc;
