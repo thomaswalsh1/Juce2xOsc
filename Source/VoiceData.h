@@ -35,6 +35,7 @@ public:
     void controllerMoved(int controllerNumber, int newControllerValue) override;
     void renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int startSample, int numSamples) override;
 	void setOscParameters(int oscIndex, const OscParameters& params);
+    void setAdsrSync(bool sync);
 private:
     Oscillator osc[NUM_OSCS];
 
@@ -43,4 +44,7 @@ private:
     int currentNote = 0;
 	float currentFrequency = 0.0f;
     float level = 0.0f;
+
+	bool adsrSync = false;
+
 };

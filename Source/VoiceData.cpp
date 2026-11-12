@@ -129,5 +129,17 @@ void SynthVoice::setOscParameters(int oscIndex, const OscParameters& params) {
 
 	osc[oscIndex].setWaveform(static_cast<WaveformType>(params.wave));
 	osc[oscIndex].setDetune(params.coarse, params.fine);
+	if (adsrSync) {
+		for (int i = 0; i < NUM_OSCS; ++i) {
+			osc[i].setAdsr(params.attack, params.decay, params.sustain, params.release);
+		}
+	}
+	else {
+		osc[oscIndex].setAdsr(params.attack, params.decay, params.sustain, params.release);
+	}
 	osc[oscIndex].setAdsr(params.attack, params.decay, params.sustain, params.release);
+}
+
+void SynthVoice::setAdsrSync(bool sync) {
+	adsrSync = sync;
 }

@@ -166,6 +166,8 @@ void _2xOscSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 	osc1.release = apvts.getRawParameterValue("OSC1_RELEASE")->load();
 	osc2.release = apvts.getRawParameterValue("OSC2_RELEASE")->load();
 
+	bool adsrSync = apvts.getRawParameterValue("ADSR_Sync")->load();
+
 
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
@@ -173,8 +175,17 @@ void _2xOscSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
+    // modify the parameters of osc2
+    if (adsrSync) {
+		osc2.attack = osc1.attack;
+		osc2.decay = osc1.decay;
+		osc2.sustain = osc1.sustain;
+		osc2.release = osc1.release;
+    }
+
 	for (int i = 0; i < synth.getNumVoices(); i++) {
 		if (auto voice = dynamic_cast<SynthVoice*>(synth.getVoice(i))) {
+
 			voice->setOscParameters(0, osc1);
 			voice->setOscParameters(1, osc2);
 		}
@@ -238,5 +249,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout _2xOscSynthAudioProcessor::c
 	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC1_RELEASE", 1 }, "Osc 1 Release", 0.001f, 5.0f, 0.015f));
 	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_RELEASE", 1 }, "Osc 2 Release", 0.001f, 5.0f, 0.015f));
 
+	layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ "ADSR_Sync", 1 }, "ADSR Sync", false));
     return layout;
 }

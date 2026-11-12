@@ -18,6 +18,7 @@ class OscComponent : public juce::Component {
 public:
     OscComponent(juce::String name, juce::AudioProcessorValueTreeState& apvts);
     ~OscComponent() override;
+    void setAdsrEnabled(bool enabled);
 
     void paint(juce::Graphics&) override;
     void resized() override;
@@ -61,6 +62,8 @@ private:
     juce::Rectangle<int> detuneArea;
     juce::Rectangle<int> adsrArea;
 
+	juce::AudioProcessorValueTreeState& apvts;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OscComponent)
 };
 
@@ -81,7 +84,11 @@ private:
     OscComponent osc1{ "OSC1", apvts };
     OscComponent osc2{ "OSC2", apvts };
 
-    juce::ToggleButton enableAdsr2;
+	
+
+    juce::ToggleButton adsrSync;
+	std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> adsrSyncAttachment;
+
 	juce::Label mixLabel;
     juce::Slider mixControl;
 

@@ -20,7 +20,7 @@ void setupSmallerLabel(juce::Label& label, juce::String text)
     label.setFont(juce::FontOptions(Style::GothicFontName, 12.0f, juce::Font::bold));
 }
 
-OscComponent::OscComponent(juce::String name, juce::AudioProcessorValueTreeState& apvts)
+OscComponent::OscComponent(juce::String name, juce::AudioProcessorValueTreeState& apvts) : apvts(apvts)
 {
 	juce::LookAndFeel& lnf = getLookAndFeel();
 
@@ -113,10 +113,20 @@ OscComponent::OscComponent(juce::String name, juce::AudioProcessorValueTreeState
 	decayAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, name + "_DECAY", decay);
 	sustainAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, name + "_SUSTAIN", sustain);
 	releaseAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, name + "_RELEASE", release);
+	
+	
 }
 
 OscComponent::~OscComponent()
 {
+}
+
+void OscComponent::setAdsrEnabled(bool enabled)
+{
+	attack.setEnabled(enabled);
+	decay.setEnabled(enabled);
+	sustain.setEnabled(enabled);
+	release.setEnabled(enabled);
 }
 
 void OscComponent::paint(juce::Graphics& g)
@@ -222,14 +232,23 @@ OscPage::OscPage(juce::AudioProcessorValueTreeState& apvts)
 	mixLabel.setColour(juce::Label::textColourId, Style::textSecondary);
 	addAndMakeVisible(mixLabel);
 
-	enableAdsr2.setButtonText("Adsr 2");
-    addAndMakeVisible(enableAdsr2);
+	adsrSync.setButtonText("Adsr Sync");
+    addAndMakeVisible(adsrSync);
 
     mixControl.setSliderStyle(juce::Slider::LinearHorizontal);
 	mixControl.setColour(juce::Slider::textBoxOutlineColourId, Style::textSecondary);
 	mixControl.setColour(juce::Slider::textBoxTextColourId, Style::textSecondary);
 	mixControl.setTextBoxStyle(juce::Slider::TextBoxAbove, false, 50, 20);
     addAndMakeVisible(mixControl);
+
+	adsrSyncAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(apvts, "ADSR_Sync", adsrSync);
+	auto updateAdsrSync = [this] {
+		bool sync = adsrSync.getToggleState();
+		osc2.setAdsrEnabled(!sync);
+	};
+	adsrSync.onClick = updateAdsrSync;
+	updateAdsrSync();
+
 }
 
 OscPage::~OscPage()
@@ -257,7 +276,7 @@ void OscPage::resized()
     bottomControls.flexDirection = juce::FlexBox::Direction::row;
     bottomControls.justifyContent = juce::FlexBox::JustifyContent::center;
     bottomControls.alignItems = juce::FlexBox::AlignItems::center;
-    bottomControls.items.add(juce::FlexItem(enableAdsr2).withFlex(1.0f).withHeight(30));
+    bottomControls.items.add(juce::FlexItem(adsrSync).withFlex(1.0f).withHeight(30));
     bottomControls.items.add(juce::FlexItem(mixLabel).withFlex(1.0f).withHeight(30));
     bottomControls.items.add(juce::FlexItem(mixControl).withFlex(1.0f).withHeight(30));
 
