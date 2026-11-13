@@ -24,9 +24,22 @@ public:
     }
 };
 
+struct GlideParameters {
+    float glideTime = 0.0f;
+    float sourceFrequency = 0.0f;
+    float nextFrequency = 0.0f;
+};
+
+struct FMParameters {
+    bool osc1 = false;
+    bool osc2 = false;
+    float ratio = 1.0f;
+    float depth = 0.0f;
+};
 
 class SynthVoice : public juce::SynthesiserVoice {
 public:
+	explicit SynthVoice(GlideParameters& glideParams) : glide(glideParams) {}
     void prepareToPlay(double sampleRate, int samplesPerBlock, int outputChannels);
     bool canPlaySound(juce::SynthesiserSound* sound) override;
     void startNote(int midiNoteNumber, float velocity, juce::SynthesiserSound* sound, int currentPitchWheelPosition) override;
@@ -37,14 +50,16 @@ public:
 	void setOscParameters(int oscIndex, const OscParameters& params);
     void setAdsrSync(bool sync);
     void updateMix(float newMix);
+	void updateGlide(float newGlide);
+    void updateFMParameters(FMParameters& fmParams, OscParameters& fmOsc);
 private:
     Oscillator osc[NUM_OSCS];
-
+    GlideParameters& glide;
     
     int currentNote = 0;
 	float currentFrequency = 0.0f;
     float level = 0.0f;
-
 	bool adsrSync = false;
+
     juce::SmoothedValue<float> mixSmoothed;
 };

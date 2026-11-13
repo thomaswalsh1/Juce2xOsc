@@ -13,6 +13,7 @@
 #include <JuceHeader.h>
 #include "CustomLookAndFeel.h"
 
+void setupSmallerLabel(juce::Label& label, juce::String text);
 
 class OscComponent : public juce::Component {
 public:
@@ -92,6 +93,10 @@ private:
 	juce::Label mixLabel;
     juce::Slider mixControl;
 	std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> mixControlAttachment;
+
+	juce::Label glideLabel;
+	juce::Slider glideControl;
+	std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> glideControlAttachment;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OscPage)
 };

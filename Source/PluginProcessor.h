@@ -61,7 +61,9 @@ private:
     //==============================================================================
 
     juce::Synthesiser synth;
-	
+    GlideParameters glideParams;
+    std::atomic<float>* glideParameter = nullptr;
+
     static constexpr int NUM_VOICES = 12;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (_2xOscSynthAudioProcessor)

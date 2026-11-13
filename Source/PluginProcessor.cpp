@@ -25,11 +25,11 @@ _2xOscSynthAudioProcessor::_2xOscSynthAudioProcessor()
 {
     // load params
     
-
+	glideParameter = apvts.getRawParameterValue("GLIDE_TIME");
 
     synth.addSound(new SynthSound());
     for (int i = 0; i < NUM_VOICES; i++) {
-        synth.addVoice(new SynthVoice());
+        synth.addVoice(new SynthVoice(glideParams));
     }
 }
 
@@ -148,28 +148,41 @@ void _2xOscSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
     juce::ScopedNoDenormals noDenormals;
 
     // parameters
-    OscParameters osc1, osc2;
+    OscParameters osc1, osc2, osc3;
 	osc1.wave = apvts.getRawParameterValue("OSC1_WAVE")->load();
-	osc2.wave = apvts.getRawParameterValue("OSC2_WAVE")->load();
+    osc2.wave = apvts.getRawParameterValue("OSC2_WAVE")->load();
+    osc3.wave = apvts.getRawParameterValue("OSC3_WAVE")->load();
 	osc1.coarse = apvts.getRawParameterValue("OSC1_COARSE")->load();
 	osc2.coarse = apvts.getRawParameterValue("OSC2_COARSE")->load();
+    osc3.coarse = apvts.getRawParameterValue("OSC3_COARSE")->load();
 	osc1.fine = apvts.getRawParameterValue("OSC1_FINE")->load();
-	osc2.fine = apvts.getRawParameterValue("OSC2_FINE")->load();
+    osc2.fine = apvts.getRawParameterValue("OSC2_FINE")->load();
+    osc3.fine = apvts.getRawParameterValue("OSC3_FINE")->load();
 
     // adsr
 	osc1.attack = apvts.getRawParameterValue("OSC1_ATTACK")->load();
-	osc2.attack = apvts.getRawParameterValue("OSC2_ATTACK")->load();
+    osc2.attack = apvts.getRawParameterValue("OSC2_ATTACK")->load();
+    osc3.attack = apvts.getRawParameterValue("OSC3_ATTACK")->load();
 	osc1.decay = apvts.getRawParameterValue("OSC1_DECAY")->load();
-	osc2.decay = apvts.getRawParameterValue("OSC2_DECAY")->load();
+    osc2.decay = apvts.getRawParameterValue("OSC2_DECAY")->load();
+    osc3.decay = apvts.getRawParameterValue("OSC3_DECAY")->load();
 	osc1.sustain = apvts.getRawParameterValue("OSC1_SUSTAIN")->load();
-	osc2.sustain = apvts.getRawParameterValue("OSC2_SUSTAIN")->load();
+    osc2.sustain = apvts.getRawParameterValue("OSC2_SUSTAIN")->load();
+    osc3.sustain = apvts.getRawParameterValue("OSC3_SUSTAIN")->load();
 	osc1.release = apvts.getRawParameterValue("OSC1_RELEASE")->load();
-	osc2.release = apvts.getRawParameterValue("OSC2_RELEASE")->load();
+    osc2.release = apvts.getRawParameterValue("OSC2_RELEASE")->load();
+    osc3.release = apvts.getRawParameterValue("OSC3_RELEASE")->load();
+
 
 	bool adsrSync = apvts.getRawParameterValue("ADSR_Sync")->load();
-
 	float mix = apvts.getRawParameterValue("OSC_MIX")->load();
+    glideParams.glideTime = glideParameter->load();
 
+    FMParameters fm;
+    fm.depth = apvts.getRawParameterValue("FM_DEPTH")->load();
+    fm.ratio = apvts.getRawParameterValue("FM_RATIO")->load();
+    fm.osc1 = apvts.getRawParameterValue("FM_OSC1")->load();
+    fm.osc2 = apvts.getRawParameterValue("FM_OSC2")->load();
 
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
@@ -191,10 +204,17 @@ void _2xOscSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 			voice->setOscParameters(0, osc1);
 			voice->setOscParameters(1, osc2);
 			voice->updateMix(mix);
+            voice->updateFMParameters(fm, osc3);
 		}
 	}
     
     synth.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
+
+    // next blocks notes glide from the last note started here
+    if (glideParams.nextFrequency > 0.0f) {
+		glideParams.sourceFrequency = glideParams.nextFrequency;
+		glideParams.nextFrequency = 0.0f;
+    }
 }
 
 //==============================================================================
@@ -237,24 +257,40 @@ juce::AudioProcessorValueTreeState::ParameterLayout _2xOscSynthAudioProcessor::c
 
     layout.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{ "OSC1_WAVE", 1 }, "Osc 1 Wave", 0, 2, 0));
     layout.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{ "OSC2_WAVE", 1 }, "Osc 2 Wave", 0, 2, 0));
+    layout.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{ "OSC3_WAVE", 1 }, "Osc 3 Wave", 0, 2, 0));
 
     layout.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{ "OSC1_COARSE", 1 }, "Osc 1 Coarse", -36, 36, 0));
     layout.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{ "OSC2_COARSE", 1 }, "Osc 2 Coarse", -36, 36, 0));
+    layout.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{ "OSC3_COARSE", 1 }, "Osc 3 Coarse", -36, 36, 0));
 	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC1_FINE", 1 }, "Osc 1 Fine", -50.0f, 50.0f, 0.0f));
-	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_FINE", 1 }, "Osc 2 Fine", -50.0f, 50.0f, 0.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_FINE", 1 }, "Osc 2 Fine", -50.0f, 50.0f, 0.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC3_FINE", 1 }, "Osc 3 Fine", -50.0f, 50.0f, 0.0f));
 
 	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC1_ATTACK", 1 }, "Osc 1 Attack", 0.001f, 5.0f, 0.005f));
-	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_ATTACK", 1 }, "Osc 2 Attack", 0.001f, 5.0f, 0.005f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_ATTACK", 1 }, "Osc 2 Attack", 0.001f, 5.0f, 0.005f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC3_ATTACK", 1 }, "Osc 3 Attack", 0.001f, 5.0f, 0.005f));
 	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC1_DECAY", 1 }, "Osc 1 Decay", 0.001f, 5.0f, 0.1f));
-	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_DECAY", 1 }, "Osc 2 Decay", 0.001f, 5.0f, 0.1f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_DECAY", 1 }, "Osc 2 Decay", 0.001f, 5.0f, 0.1f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC3_DECAY", 1 }, "Osc 3 Decay", 0.001f, 5.0f, 0.1f));
 	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC1_SUSTAIN", 1 }, "Osc 1 Sustain", 0.0f, 1.0f, 0.3f));
-	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_SUSTAIN", 1 }, "Osc 2 Sustain", 0.0f, 1.0f, 0.3f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_SUSTAIN", 1 }, "Osc 2 Sustain", 0.0f, 1.0f, 0.3f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC3_SUSTAIN", 1 }, "Osc 3 Sustain", 0.0f, 1.0f, 0.3f));
 	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC1_RELEASE", 1 }, "Osc 1 Release", 0.001f, 5.0f, 0.015f));
-	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_RELEASE", 1 }, "Osc 2 Release", 0.001f, 5.0f, 0.015f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_RELEASE", 1 }, "Osc 2 Release", 0.001f, 5.0f, 0.015f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC3_RELEASE", 1 }, "Osc 3 Release", 0.001f, 5.0f, 0.015f));
 
 	layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ "ADSR_Sync", 1 }, "ADSR Sync", false));
-
     layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC_MIX", 1 }, "OSC Mix", 0.0f, 1.0f, 0.5f));
+	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "GLIDE_TIME", 1 }, "Glide Time",
+        juce::NormalisableRange<float>(0.0f, 2.0f, 0.001f, 0.4f), 0.0f));
+
+    
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ "FM_OSC1", 1 }, "FM Osc 1", false));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ "FM_OSC2", 1 }, "FM Osc 2", false));
+    juce::NormalisableRange<float> depthRange(0.0f, 10.0f, 0.01f);
+    juce::NormalisableRange<float> ratioRange(0.25f, 16.0f, 0.01f);
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "FM_DEPTH", 1 }, "FM Depth", depthRange, 0.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "FM_RATIO", 1 }, "FM Ratio", ratioRange, 1.0f));
 
     return layout;
 }

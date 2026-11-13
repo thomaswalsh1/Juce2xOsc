@@ -231,16 +231,16 @@ OscPage::OscPage(juce::AudioProcessorValueTreeState& apvts)
 	mixLabel.setFont(juce::FontOptions(Style::GothicFontName, 14.0f, juce::Font::bold));
 	mixLabel.setColour(juce::Label::textColourId, Style::textSecondary);
 	addAndMakeVisible(mixLabel);
-
-	adsrSync.setButtonText("Adsr Sync");
-    addAndMakeVisible(adsrSync);
-
-    mixControl.setSliderStyle(juce::Slider::LinearHorizontal);
+	mixControlAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, "OSC_MIX", mixControl);
+	mixControl.setSliderStyle(juce::Slider::LinearHorizontal);
 	mixControl.setColour(juce::Slider::textBoxOutlineColourId, Style::textSecondary);
 	mixControl.setColour(juce::Slider::textBoxTextColourId, Style::textSecondary);
 	mixControl.setTextBoxStyle(juce::Slider::TextBoxAbove, false, 50, 20);
-    addAndMakeVisible(mixControl);
+	addAndMakeVisible(mixControl);
 
+
+	adsrSync.setButtonText("Adsr Sync");
+    addAndMakeVisible(adsrSync);
 	adsrSyncAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(apvts, "ADSR_Sync", adsrSync);
 	auto updateAdsrSync = [this] {
 		bool sync = adsrSync.getToggleState();
@@ -249,7 +249,14 @@ OscPage::OscPage(juce::AudioProcessorValueTreeState& apvts)
 	adsrSync.onClick = updateAdsrSync;
 	updateAdsrSync();
 
-	mixControlAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, "OSC_MIX", mixControl);
+	glideLabel.setText("Glide", juce::dontSendNotification);
+	addAndMakeVisible(glideLabel);
+	glideControl.setSliderStyle(juce::Slider::LinearHorizontal);
+	glideControl.setColour(juce::Slider::textBoxOutlineColourId, Style::textSecondary);
+	glideControl.setColour(juce::Slider::textBoxTextColourId, Style::textSecondary);
+	glideControl.setTextBoxStyle(juce::Slider::TextBoxAbove, false, 50, 20);
+	addAndMakeVisible(glideControl);
+	glideControlAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(apvts, "GLIDE_TIME", glideControl);
 
 }
 
@@ -281,7 +288,8 @@ void OscPage::resized()
     bottomControls.items.add(juce::FlexItem(adsrSync).withFlex(1.0f).withHeight(30));
     bottomControls.items.add(juce::FlexItem(mixLabel).withFlex(1.0f).withHeight(30));
     bottomControls.items.add(juce::FlexItem(mixControl).withFlex(1.0f).withHeight(30));
-
+	bottomControls.items.add(juce::FlexItem(glideLabel).withFlex(1.0f).withHeight(30));
+	bottomControls.items.add(juce::FlexItem(glideControl).withFlex(1.0f).withHeight(30));
     main.items.add(juce::FlexItem(osc1).withFlex(2.0f).withWidth(fullWidth));
     main.items.add(juce::FlexItem(osc2).withFlex(2.0f).withWidth(fullWidth));
     main.items.add(juce::FlexItem(bottomControls).withFlex(1.0f).withWidth(fullWidth));

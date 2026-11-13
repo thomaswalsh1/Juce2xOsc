@@ -29,15 +29,28 @@ bool SynthVoice::canPlaySound(juce::SynthesiserSound* sound) {
     return true;
 }
 
+static float wheelToSemitones(int wheelValue) {
+    return (wheelValue - 8192) / 8192.0f * 2.0f;
+}
+
 void SynthVoice::startNote(int midiNoteNumber, float velocity, juce::SynthesiserSound* sound, int currentPitchWheelPosition) {
 	DBG("Note Started: " << midiNoteNumber);
 
     currentNote = midiNoteNumber;
 	level = velocity;
-	currentFrequency = juce::MidiMessage::getMidiNoteInHertz(midiNoteNumber);
+
+    // handle gliding
+	const float noteTarget = (float)juce::MidiMessage::getMidiNoteInHertz(midiNoteNumber);
+	const bool glideActive = glide.glideTime > 0.001f && glide.sourceFrequency > 0.0f;
+	const float prev = glideActive ? glide.sourceFrequency : noteTarget;
+	const float newTime = glideActive ? glide.glideTime : 0.0f;
+
+	glide.nextFrequency = noteTarget;
+
+	const float bend = wheelToSemitones(currentPitchWheelPosition);
     for (int i = 0; i < NUM_OSCS; i++) {
-        osc[i].setFrequency(currentFrequency, true);
-        osc[i].noteOn();
+		osc[i].setBend(bend);
+        osc[i].startNote(prev, noteTarget, newTime);
     }
 }
 
@@ -57,7 +70,10 @@ void SynthVoice::stopNote(float velocity, bool allowTailOff) {
 }
 
 void SynthVoice::pitchWheelMoved(int newPitchWheelValue) {
-
+	const float bend = wheelToSemitones(newPitchWheelValue);
+	for (int i = 0; i < NUM_OSCS; i++) {
+		osc[i].setBend(bend);
+	}
 }
 
 void SynthVoice::controllerMoved(int controllerNumber, int newControllerValue) {
@@ -106,4 +122,14 @@ void SynthVoice::setAdsrSync(bool sync) {
 void SynthVoice::updateMix(float newMix)
 {
 	mixSmoothed.setTargetValue(newMix);
+}
+
+void SynthVoice::updateFMParameters(FMParameters& fmParams, OscParameters& fmOsc) {
+    const bool enabled[NUM_OSCS] = { fmParams.osc1, fmParams.osc2 };
+    for (int i = 0; i < NUM_OSCS; ++i) {
+        // depth of 0 turns fm off for that osc
+        osc[i].setFMDepth(enabled[i] ? fmParams.depth : 0.0f);
+        osc[i].setFMRatio(fmParams.ratio);
+        osc[i].setFMData(fmOsc);
+    }
 }
