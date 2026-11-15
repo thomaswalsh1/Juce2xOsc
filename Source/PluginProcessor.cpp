@@ -23,13 +23,12 @@ _2xOscSynthAudioProcessor::_2xOscSynthAudioProcessor()
                        ), apvts (*this, nullptr, "Parameters", createParameterLayout())
 #endif
 {
-    // load params
-    
-	glideParameter = apvts.getRawParameterValue("GLIDE_TIME");
+    pointers.attach(apvts);
+    pointers.load(params);
 
     synth.addSound(new SynthSound());
-    for (int i = 0; i < NUM_VOICES; i++) {
-        synth.addVoice(new SynthVoice(glideParams));
+    for (int i = 0; i < SynthConstants::numVoices; i++) {
+        synth.addVoice(new SynthVoice(params, synth));
     }
 }
 
@@ -86,16 +85,16 @@ int _2xOscSynthAudioProcessor::getCurrentProgram()
     return 0;
 }
 
-void _2xOscSynthAudioProcessor::setCurrentProgram (int index)
+void _2xOscSynthAudioProcessor::setCurrentProgram (int)
 {
 }
 
-const juce::String _2xOscSynthAudioProcessor::getProgramName (int index)
+const juce::String _2xOscSynthAudioProcessor::getProgramName (int)
 {
     return {};
 }
 
-void _2xOscSynthAudioProcessor::changeProgramName (int index, const juce::String& newName)
+void _2xOscSynthAudioProcessor::changeProgramName (int, const juce::String&)
 {
 }
 
@@ -104,10 +103,13 @@ void _2xOscSynthAudioProcessor::prepareToPlay (double sampleRate, int samplesPer
 {
     synth.setCurrentPlaybackSampleRate(sampleRate);
 
-    // initialize voices
-    for (int i = 0; i < NUM_VOICES; i++) {
-        SynthVoice * voice = dynamic_cast<SynthVoice *> (synth.getVoice(i));
-        voice->prepareToPlay(sampleRate, samplesPerBlock, getTotalNumOutputChannels());
+    // voices start from the current parameter values rather than ramping in
+    pointers.load(params);
+    lastMasterGain = juce::Decibels::decibelsToGain(params.masterGainDb);
+
+    for (int i = 0; i < synth.getNumVoices(); i++) {
+        if (auto voice = dynamic_cast<SynthVoice*>(synth.getVoice(i)))
+            voice->prepareToPlay(sampleRate, samplesPerBlock);
     }
 }
 
@@ -147,42 +149,8 @@ void _2xOscSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 {
     juce::ScopedNoDenormals noDenormals;
 
-    // parameters
-    OscParameters osc1, osc2, osc3;
-	osc1.wave = apvts.getRawParameterValue("OSC1_WAVE")->load();
-    osc2.wave = apvts.getRawParameterValue("OSC2_WAVE")->load();
-    osc3.wave = apvts.getRawParameterValue("OSC3_WAVE")->load();
-	osc1.coarse = apvts.getRawParameterValue("OSC1_COARSE")->load();
-	osc2.coarse = apvts.getRawParameterValue("OSC2_COARSE")->load();
-    osc3.coarse = apvts.getRawParameterValue("OSC3_COARSE")->load();
-	osc1.fine = apvts.getRawParameterValue("OSC1_FINE")->load();
-    osc2.fine = apvts.getRawParameterValue("OSC2_FINE")->load();
-    osc3.fine = apvts.getRawParameterValue("OSC3_FINE")->load();
-
-    // adsr
-	osc1.attack = apvts.getRawParameterValue("OSC1_ATTACK")->load();
-    osc2.attack = apvts.getRawParameterValue("OSC2_ATTACK")->load();
-    osc3.attack = apvts.getRawParameterValue("OSC3_ATTACK")->load();
-	osc1.decay = apvts.getRawParameterValue("OSC1_DECAY")->load();
-    osc2.decay = apvts.getRawParameterValue("OSC2_DECAY")->load();
-    osc3.decay = apvts.getRawParameterValue("OSC3_DECAY")->load();
-	osc1.sustain = apvts.getRawParameterValue("OSC1_SUSTAIN")->load();
-    osc2.sustain = apvts.getRawParameterValue("OSC2_SUSTAIN")->load();
-    osc3.sustain = apvts.getRawParameterValue("OSC3_SUSTAIN")->load();
-	osc1.release = apvts.getRawParameterValue("OSC1_RELEASE")->load();
-    osc2.release = apvts.getRawParameterValue("OSC2_RELEASE")->load();
-    osc3.release = apvts.getRawParameterValue("OSC3_RELEASE")->load();
-
-
-	bool adsrSync = apvts.getRawParameterValue("ADSR_Sync")->load();
-	float mix = apvts.getRawParameterValue("OSC_MIX")->load();
-    glideParams.glideTime = glideParameter->load();
-
-    FMParameters fm;
-    fm.depth = apvts.getRawParameterValue("FM_DEPTH")->load();
-    fm.ratio = apvts.getRawParameterValue("FM_RATIO")->load();
-    fm.osc1 = apvts.getRawParameterValue("FM_OSC1")->load();
-    fm.osc2 = apvts.getRawParameterValue("FM_OSC2")->load();
+    // voices read this snapshot while rendering
+    pointers.load(params);
 
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
@@ -190,31 +158,12 @@ void _2xOscSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // modify the parameters of osc2
-    if (adsrSync) {
-		osc2.attack = osc1.attack;
-		osc2.decay = osc1.decay;
-		osc2.sustain = osc1.sustain;
-		osc2.release = osc1.release;
-    }
-
-	for (int i = 0; i < synth.getNumVoices(); i++) {
-		if (auto voice = dynamic_cast<SynthVoice*>(synth.getVoice(i))) {
-
-			voice->setOscParameters(0, osc1);
-			voice->setOscParameters(1, osc2);
-			voice->updateMix(mix);
-            voice->updateFMParameters(fm, osc3);
-		}
-	}
-    
     synth.renderNextBlock(buffer, midiMessages, 0, buffer.getNumSamples());
 
-    // next blocks notes glide from the last note started here
-    if (glideParams.nextFrequency > 0.0f) {
-		glideParams.sourceFrequency = glideParams.nextFrequency;
-		glideParams.nextFrequency = 0.0f;
-    }
+    // ramp across the block so master gain changes don't click
+    const float masterGain = juce::Decibels::decibelsToGain(params.masterGainDb);
+    buffer.applyGainRamp(0, buffer.getNumSamples(), lastMasterGain, masterGain);
+    lastMasterGain = masterGain;
 }
 
 //==============================================================================
@@ -231,15 +180,16 @@ juce::AudioProcessorEditor* _2xOscSynthAudioProcessor::createEditor()
 //==============================================================================
 void _2xOscSynthAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
+    auto state = apvts.copyState();
+    std::unique_ptr<juce::XmlElement> xml(state.createXml());
+    copyXmlToBinary(*xml, destData);
 }
 
 void _2xOscSynthAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
+    std::unique_ptr<juce::XmlElement> xml(getXmlFromBinary(data, sizeInBytes));
+    if (xml != nullptr && xml->hasTagName(apvts.state.getType()))
+        apvts.replaceState(juce::ValueTree::fromXml(*xml));
 }
 
 //==============================================================================
@@ -251,46 +201,52 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 
 juce::AudioProcessorValueTreeState::ParameterLayout _2xOscSynthAudioProcessor::createParameterLayout()
 {
+    using Float = juce::AudioParameterFloat;
+    using Range = juce::NormalisableRange<float>;
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
-    
-    // parameters
 
-    layout.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{ "OSC1_WAVE", 1 }, "Osc 1 Wave", 0, 2, 0));
-    layout.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{ "OSC2_WAVE", 1 }, "Osc 2 Wave", 0, 2, 0));
-    layout.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{ "OSC3_WAVE", 1 }, "Osc 3 Wave", 0, 2, 0));
+    // carriers
+    const std::pair<juce::String, juce::String> carriers[] = {
+        { ParamIDs::osc1, "Osc 1" },
+        { ParamIDs::osc2, "Osc 2" },
+    };
+    for (const auto& [prefix, name] : carriers) {
+        layout.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ prefix + ParamIDs::wave, 1 }, name + " Wave", waveformNames, 0));
+        layout.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{ prefix + ParamIDs::coarse, 1 }, name + " Coarse", -36, 36, 0));
+        layout.add(std::make_unique<Float>(juce::ParameterID{ prefix + ParamIDs::fine, 1 }, name + " Fine", -50.0f, 50.0f, 0.0f));
+    }
 
-    layout.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{ "OSC1_COARSE", 1 }, "Osc 1 Coarse", -36, 36, 0));
-    layout.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{ "OSC2_COARSE", 1 }, "Osc 2 Coarse", -36, 36, 0));
-    layout.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID{ "OSC3_COARSE", 1 }, "Osc 3 Coarse", -36, 36, 0));
-	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC1_FINE", 1 }, "Osc 1 Fine", -50.0f, 50.0f, 0.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_FINE", 1 }, "Osc 2 Fine", -50.0f, 50.0f, 0.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC3_FINE", 1 }, "Osc 3 Fine", -50.0f, 50.0f, 0.0f));
+    // envelopes, all share the same ranges
+    auto addEnvelope = [&layout](const juce::String& prefix, const juce::String& name, EnvelopeParameters defaults) {
+        const Range timeRange(0.001f, 5.0f, 0.001f, 0.4f);
+        layout.add(std::make_unique<Float>(juce::ParameterID{ prefix + ParamIDs::attack, 1 }, name + " Attack", timeRange, defaults.attack));
+        layout.add(std::make_unique<Float>(juce::ParameterID{ prefix + ParamIDs::decay, 1 }, name + " Decay", timeRange, defaults.decay));
+        layout.add(std::make_unique<Float>(juce::ParameterID{ prefix + ParamIDs::sustain, 1 }, name + " Sustain", 0.0f, 1.0f, defaults.sustain));
+        layout.add(std::make_unique<Float>(juce::ParameterID{ prefix + ParamIDs::release, 1 }, name + " Release", timeRange, defaults.release));
+    };
+    addEnvelope(ParamIDs::amp, "Amp", {});
+    addEnvelope(ParamIDs::filterEnv, "Filter Env", { 0.005f, 0.3f, 0.0f, 0.1f });
+    addEnvelope(ParamIDs::fm, "FM", {});
 
-	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC1_ATTACK", 1 }, "Osc 1 Attack", 0.001f, 5.0f, 0.005f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_ATTACK", 1 }, "Osc 2 Attack", 0.001f, 5.0f, 0.005f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC3_ATTACK", 1 }, "Osc 3 Attack", 0.001f, 5.0f, 0.005f));
-	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC1_DECAY", 1 }, "Osc 1 Decay", 0.001f, 5.0f, 0.1f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_DECAY", 1 }, "Osc 2 Decay", 0.001f, 5.0f, 0.1f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC3_DECAY", 1 }, "Osc 3 Decay", 0.001f, 5.0f, 0.1f));
-	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC1_SUSTAIN", 1 }, "Osc 1 Sustain", 0.0f, 1.0f, 0.3f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_SUSTAIN", 1 }, "Osc 2 Sustain", 0.0f, 1.0f, 0.3f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC3_SUSTAIN", 1 }, "Osc 3 Sustain", 0.0f, 1.0f, 0.3f));
-	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC1_RELEASE", 1 }, "Osc 1 Release", 0.001f, 5.0f, 0.015f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC2_RELEASE", 1 }, "Osc 2 Release", 0.001f, 5.0f, 0.015f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC3_RELEASE", 1 }, "Osc 3 Release", 0.001f, 5.0f, 0.015f));
+    // fm modulator
+    layout.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ ParamIDs::fm + ParamIDs::wave, 1 }, "FM Wave", waveformNames, 0));
+    layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::fm + ParamIDs::fine, 1 }, "FM Fine", -50.0f, 50.0f, 0.0f));
+    layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::fmRatio, 1 }, "FM Ratio", Range(0.25f, 16.0f, 0.01f), 1.0f));
+    layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::fmIndex, 1 }, "FM Index", Range(0.0f, 10.0f, 0.01f), 0.0f));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ ParamIDs::fmToOsc1, 1 }, "FM to Osc 1", false));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ ParamIDs::fmToOsc2, 1 }, "FM to Osc 2", false));
 
-	layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ "ADSR_Sync", 1 }, "ADSR Sync", false));
-    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "OSC_MIX", 1 }, "OSC Mix", 0.0f, 1.0f, 0.5f));
-	layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "GLIDE_TIME", 1 }, "Glide Time",
-        juce::NormalisableRange<float>(0.0f, 2.0f, 0.001f, 0.4f), 0.0f));
+    // filter
+    layout.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ ParamIDs::filterType, 1 }, "Filter Type", filterTypeNames, 0));
+    layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::filterCutoff, 1 }, "Filter Cutoff", Range(20.0f, 20000.0f, 0.1f, 0.25f), 20000.0f));
+    layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::filterResonance, 1 }, "Filter Resonance", Range(0.3f, 10.0f, 0.01f, 0.4f), 0.707f));
+    layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::filterEnvAmount, 1 }, "Filter Env Amount", Range(-4.0f, 4.0f, 0.01f), 0.0f));
+    layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::filterKeytrack, 1 }, "Filter Keytrack", Range(0.0f, 1.0f, 0.01f), 0.0f));
 
-    
-    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ "FM_OSC1", 1 }, "FM Osc 1", false));
-    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ "FM_OSC2", 1 }, "FM Osc 2", false));
-    juce::NormalisableRange<float> depthRange(0.0f, 10.0f, 0.01f);
-    juce::NormalisableRange<float> ratioRange(0.25f, 16.0f, 0.01f);
-    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "FM_DEPTH", 1 }, "FM Depth", depthRange, 0.0f));
-    layout.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID{ "FM_RATIO", 1 }, "FM Ratio", ratioRange, 1.0f));
+    // global
+    layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::oscMix, 1 }, "Osc Mix", 0.0f, 1.0f, 0.5f));
+    layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::glideTime, 1 }, "Glide Time", Range(0.0f, 2.0f, 0.001f, 0.4f), 0.0f));
+    layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::masterGain, 1 }, "Master Gain", Range(-36.0f, 6.0f, 0.1f), 0.0f));
 
     return layout;
 }

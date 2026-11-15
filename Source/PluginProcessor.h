@@ -8,8 +8,12 @@
 
 #pragma once
 
-#include "VoiceData.h"
 #include <JuceHeader.h>
+#include "ParameterPointers.h"
+#include "Parameters.h"
+#include "SynthEngine.h"
+#include "SynthSound.h"
+#include "SynthVoice.h"
 
 //==============================================================================
 /**
@@ -59,12 +63,10 @@ public:
 
 private:
     //==============================================================================
+    ParameterPointers pointers;
+    SynthParams params;         // loaded once per block, read by every voice
+    SynthEngine synth;
+    float lastMasterGain = 1.0f;
 
-    juce::Synthesiser synth;
-    GlideParameters glideParams;
-    std::atomic<float>* glideParameter = nullptr;
-
-    static constexpr int NUM_VOICES = 12;
-    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (_2xOscSynthAudioProcessor)
 };

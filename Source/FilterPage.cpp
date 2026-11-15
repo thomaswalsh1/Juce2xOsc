@@ -10,42 +10,45 @@
 
 #include <JuceHeader.h>
 #include "FilterPage.h"
+#include "Parameters.h"
 
 //==============================================================================
 FilterPage::FilterPage(juce::AudioProcessorValueTreeState& apvts)
+    : type(apvts, ParamIDs::filterType, "Type"),
+      cutoff(apvts, ParamIDs::filterCutoff, "Cutoff"),
+      resonance(apvts, ParamIDs::filterResonance, "Res"),
+      envAmount(apvts, ParamIDs::filterEnvAmount, "Env Amt"),
+      keytrack(apvts, ParamIDs::filterKeytrack, "Key"),
+      filterEnvelope(apvts, ParamIDs::filterEnv, "Filter Env")
 {
-    // In your constructor, you should add any child components, and
-    // initialise any special settings that your component needs.
+    setupLabel(titleLabel, "Filter", Style::FontSize::large, juce::Justification::left);
 
-}
-
-FilterPage::~FilterPage()
-{
+    for (auto* c : std::initializer_list<juce::Component*> { &titleLabel, &type, &cutoff, &resonance, &envAmount, &keytrack, &filterEnvelope })
+        addAndMakeVisible(c);
 }
 
 void FilterPage::paint (juce::Graphics& g)
 {
-    /* This demo code just fills the component's background and
-       draws some placeholder text to get you started.
+    g.fillAll(Style::background2);
 
-       You should replace everything in this method with your own
-       drawing code..
-    */
-
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));   // clear the background
-
-    g.setColour (juce::Colours::grey);
-    g.drawRect (getLocalBounds(), 1);   // draw an outline around the component
-
-    g.setColour (juce::Colours::white);
-    g.setFont (juce::FontOptions (14.0f));
-    g.drawText ("FilterPage", getLocalBounds(),
-                juce::Justification::centred, true);   // draw some placeholder text
+    g.setColour(Style::accent);
+    g.fillRect(filterArea);
 }
 
 void FilterPage::resized()
 {
-    // This method is where you should set the bounds of any child
-    // components that your component contains..
+    auto bounds = getLocalBounds().reduced(10);
+    const int gap = 10;
 
+    filterArea = bounds.removeFromTop((bounds.getHeight() - gap) / 2);
+    bounds.removeFromTop(gap);
+
+    auto filterBounds = filterArea;
+    titleLabel.setBounds(filterBounds.removeFromTop(20).withTrimmedLeft(5));
+    filterBounds.reduce(5, 5);
+    type.setBounds(filterBounds.removeFromLeft(90).withSizeKeepingCentre(90, 50));
+    filterBounds.removeFromLeft(5);
+    layoutRow(filterBounds, { &cutoff, &resonance, &envAmount, &keytrack });
+
+    filterEnvelope.setBounds(bounds);
 }

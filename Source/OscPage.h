@@ -12,60 +12,28 @@
 
 #include <JuceHeader.h>
 #include "CustomLookAndFeel.h"
+#include "Parameters.h"
+#include "UiHelpers.h"
 
-void setupSmallerLabel(juce::Label& label, juce::String text);
-
-class OscComponent : public juce::Component {
+// waveform and tuning controls for one oscillator
+class OscillatorPanel : public juce::Component {
 public:
-    OscComponent(juce::String name, juce::AudioProcessorValueTreeState& apvts);
-    ~OscComponent() override;
-    void setAdsrEnabled(bool enabled);
+    // tuneID/tuneText is the first tuning knob: coarse for carriers, ratio for the modulator
+    OscillatorPanel(juce::AudioProcessorValueTreeState& apvts, const juce::String& title, const juce::String& waveID,
+                    const juce::String& tuneID, const juce::String& tuneText, const juce::String& fineID);
 
     void paint(juce::Graphics&) override;
     void resized() override;
+
 private:
-    juce::Label title;
-    juce::Label adsrLabel;
+    juce::Label titleLabel;
+    juce::Label tuneLabel;
+    LabeledComboBox wave;
+    LabeledSlider tune, fine;
 
-    // Labels for each knob
-    juce::Label waveTypeLabel;
+    juce::Rectangle<int> tuneArea;
 
-    // other big label
-    juce::Label detune;
-
-    juce::Label coarseTuneLabel;
-    juce::Label fineTuneLabel;
-    juce::Label attackLabel;
-    juce::Label decayLabel;
-    juce::Label sustainLabel;
-    juce::Label releaseLabel;
-
-    // Sliders
-    juce::Slider waveType;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> waveTypeAttachment;
-
-    juce::Slider coarseTune;
-	std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> coarseTuneAttachment;
-
-    juce::Slider fineTune;
-	std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> fineTuneAttachment;
-
-    juce::Slider attack;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> attackAttachment;
-    juce::Slider decay;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> decayAttachment;
-    juce::Slider sustain;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> sustainAttachment;
-    juce::Slider release;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> releaseAttachment;
-
-    // colored areas
-    juce::Rectangle<int> detuneArea;
-    juce::Rectangle<int> adsrArea;
-
-	juce::AudioProcessorValueTreeState& apvts;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OscComponent)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OscillatorPanel)
 };
 
 //==============================================================================
@@ -73,30 +41,18 @@ class OscPage : public juce::Component
 {
 public:
     OscPage(juce::AudioProcessorValueTreeState& apvts);
-    ~OscPage() override;
 
     void paint(juce::Graphics&) override;
     void resized() override;
 
 private:
-    CustomLookAndFeel customLookAndFeel;
-    juce::AudioProcessorValueTreeState& apvts;
+    OscillatorPanel osc1;
+    OscillatorPanel osc2;
+    EnvelopePanel ampEnvelope;
 
-    OscComponent osc1{ "OSC1", apvts };
-    OscComponent osc2{ "OSC2", apvts };
-
-	
-
-    juce::ToggleButton adsrSync;
-	std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> adsrSyncAttachment;
-
-	juce::Label mixLabel;
-    juce::Slider mixControl;
-	std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> mixControlAttachment;
-
-	juce::Label glideLabel;
-	juce::Slider glideControl;
-	std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> glideControlAttachment;
+    LabeledSlider mix;
+    LabeledSlider glide;
+    LabeledSlider masterGain;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OscPage)
 };

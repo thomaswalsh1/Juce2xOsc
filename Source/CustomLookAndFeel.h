@@ -22,6 +22,17 @@ namespace Style {
     const juce::Colour textSecondary = juce::Colour::fromRGB(35, 35, 35);
 
     static inline const juce::String GothicFontName = "Special Gothic Expanded One Regular";
+
+    namespace FontSize {
+        constexpr float small = 12.0f;
+        constexpr float medium = 14.0f;
+        constexpr float large = 18.0f;
+        constexpr float heading = 28.0f;
+    }
+
+    inline juce::FontOptions font(float size) {
+        return juce::FontOptions(GothicFontName, size, juce::Font::bold);
+    }
 }
 
 
@@ -31,6 +42,21 @@ public:
     CustomLookAndFeel()
     {
 		gothicTypeface = juce::Typeface::createSystemTypefaceFor(BinaryData::SpecialGothicExpandedOneRegular_ttf, BinaryData::SpecialGothicExpandedOneRegular_ttfSize);
+
+        // parse the knob once instead of on every repaint
+        juce::String svgString(BinaryData::knobOptimized_svg, BinaryData::knobOptimized_svgSize);
+        knobDrawable = juce::Drawable::createFromSVGString(svgString);
+
+        // default control colours, so individual components don't have to set them
+        setColour(juce::Slider::textBoxOutlineColourId, Style::textSecondary);
+        setColour(juce::Slider::textBoxTextColourId, Style::textSecondary);
+        setColour(juce::ComboBox::backgroundColourId, Style::accent);
+        setColour(juce::ComboBox::textColourId, Style::textSecondary);
+        setColour(juce::ComboBox::outlineColourId, Style::textSecondary);
+        setColour(juce::ComboBox::arrowColourId, Style::textSecondary);
+        setColour(juce::ToggleButton::textColourId, Style::textSecondary);
+        setColour(juce::ToggleButton::tickColourId, Style::textSecondary);
+        setColour(juce::ToggleButton::tickDisabledColourId, Style::surface);
     }
 
 	juce::Typeface::Ptr getTypefaceForFont(const juce::Font& font) override
@@ -45,38 +71,28 @@ public:
 		return LookAndFeel_V4::getTypefaceForFont(font);
 	}
 
-    juce::Font getHeadingFont(float size = 28.0f) {
-		return juce::Font(Style::GothicFontName, size, juce::Font::bold);
-    }
-
     void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height,
         float sliderPosProportional, float rotaryStartAngle,
-        float rotaryEndAngle, juce::Slider& slider) override
+        float rotaryEndAngle, juce::Slider&) override
     {
-        auto* svgData = BinaryData::knobOptimized_svg;
-        auto svgDataSize = BinaryData::knobOptimized_svgSize;
-        juce::String svgString (svgData, svgDataSize);
-
-        std::unique_ptr<juce::Drawable> drawable = juce::Drawable::createFromSVGString(svgString);
-
-        if (drawable != nullptr)
+        if (knobDrawable != nullptr)
         {
-            juce::Rectangle<float> target(x, y, width, height);
-            float angle = rotaryEndAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
+            juce::Rectangle<float> target((float)x, (float)y, (float)width, (float)height);
+            float angle = rotaryStartAngle + sliderPosProportional * (rotaryEndAngle - rotaryStartAngle);
 
             auto transform = juce::AffineTransform::rotation(angle, target.getCentreX(), target.getCentreY());
 
-            drawable->setDrawableTransformToFit(target, juce::RectanglePlacement::centred);
-            drawable->draw(g, 1.0f, transform);
+            knobDrawable->setDrawableTransformToFit(target, juce::RectanglePlacement::centred);
+            knobDrawable->draw(g, 1.0f, transform);
         }
     }
 
-	int getTabButtonBestWidth(juce::TabBarButton& button, int tabDepth) override
+	int getTabButtonBestWidth(juce::TabBarButton&, int) override
 	{
         return 50;
 	}
 
-	void drawTabButton(juce::TabBarButton& button, juce::Graphics& g, bool isMouseOver, bool isMouseDown) override
+	void drawTabButton(juce::TabBarButton& button, juce::Graphics& g, bool, bool) override
 	{
 		auto bounds = button.getLocalBounds().toFloat();
 		auto tabColour = button.getTabBackgroundColour();
@@ -87,10 +103,11 @@ public:
 			g.setColour(tabColour.contrasting(0.3f));
 			g.drawRect(bounds, 1.0f);
 		}
-        g.setFont(getHeadingFont(12.0f));  
+        g.setFont(Style::font(Style::FontSize::small));
 		g.setColour(Style::background);
         g.drawText(button.getButtonText(), bounds, juce::Justification::centred);
 	}
 private:
     juce::Typeface::Ptr gothicTypeface;
+    std::unique_ptr<juce::Drawable> knobDrawable;
 };

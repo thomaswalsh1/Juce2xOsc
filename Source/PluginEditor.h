@@ -10,56 +10,8 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
-#include "OscPage.h"
-#include "FmPage.h"
-#include "FilterPage.h"
-#include "CustomLookAndFeel.h";
-
-
-// Tabs1 = Oscillators and FM Oscillator
-class Tabs1 : public juce::TabbedComponent
-{
-public:
-    Tabs1(juce::AudioProcessorValueTreeState &apvts) : juce::TabbedComponent(juce::TabbedButtonBar::TabsAtTop), oscPage(apvts), fmPage(apvts) {
-        
-        setTabBarDepth(20);
-
-        addTab("Osc", Style::accent, &oscPage, false);
-        addTab("FM", Style::accent, &fmPage, false);
-        
-        setCurrentTabIndex(0, false);
-    }
-
-    void paint(juce::Graphics& g) override {
-        g.fillAll(Style::background2);
-    }
-
-    ~Tabs1() override = default;
-private:
-    OscPage oscPage;
-    FmPage fmPage;
-};
-
-// Tabs2 = Filter and other
-class Tabs2 : public juce::TabbedComponent
-{
-public:
-    Tabs2(juce::AudioProcessorValueTreeState& apvts) : juce::TabbedComponent(juce::TabbedButtonBar::TabsAtTop), filterPage(apvts) {
-
-        addTab("Filter", Style::accent, &filterPage, false);
-        setTabBarDepth(20);
-        setCurrentTabIndex(0, false);
-    }
-
-	void paint(juce::Graphics& g) override {
-		g.fillAll(Style::background2);
-	}
-
-    ~Tabs2() override = default;
-private:
-    FilterPage filterPage;
-};
-
+#include "CustomLookAndFeel.h"
+#include "PageTabs.h"
 
 //==============================================================================
 /**
@@ -83,8 +35,8 @@ private:
     CustomLookAndFeel customLookAndFeel;
 
     // tabs
-    Tabs1 tabs1;
-    Tabs2 tabs2;
+    OscillatorTabs oscillatorTabs;
+    EffectsTabs effectsTabs;
 
     // header
     juce::Label header;
