@@ -32,10 +32,14 @@ public:
 
     // phaseOffset is in cycles (1.0 = one full period)
     float processSample(float phaseOffset = 0.0f) {
+        // TN: freq = midi * offset/detune * mod
         const float frequency = noteFrequency.getNextValue() * offsetRatio.getNextValue() * frequencyMultiplier.getNextValue();
+        // TN: increment is how much this moves forward by 
         const float increment = juce::jlimit(0.0f, 0.5f, frequency / (float)sampleRate);
 
+        // TN: add the offset we need
         float p = phase + phaseOffset;
+        // TN: return to 0..1 range
         p -= std::floor(p);
 
         float out = 0.0f;
@@ -70,9 +74,9 @@ private:
     int coarse = 0;
     float fine = 0.0f;
     float bend = 0.0f;
-    float phase = 0.0f;
+    float phase = 0.0f; // TN: measured in cycles
 
-    double sampleRate = 44100.0;
+    double sampleRate = 44100.0; // TN: how many snapshots in a second
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Multiplicative> noteFrequency { 440.0f };
     juce::SmoothedValue<float> offsetRatio { 1.0f };
     juce::SmoothedValue<float> frequencyMultiplier { 1.0f };

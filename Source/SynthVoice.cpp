@@ -109,6 +109,7 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int sta
         const float c1 = carriers[0].processSample(fmToOsc1 ? phaseOffset : 0.0f);
         const float c2 = carriers[1].processSample(fmToOsc2 ? phaseOffset : 0.0f);
         const float m = mixSmoothed.getNextValue();
+        // TN: Calculate Mixed Value
         float sample = c1 * (1.0f - m) + c2 * m;
 
         filter.setCutoffFrequency(computeCutoff(filterEnv.getNextSample()));
@@ -128,15 +129,18 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int sta
 }
 
 void SynthVoice::applyParams() {
+    // TN: Run params for oscillators
     for (int i = 0; i < numCarriers; ++i) {
         carriers[i].setWaveform(static_cast<WaveformType>(params.osc[i].wave));
         carriers[i].setDetune(params.osc[i].coarse, params.osc[i].fine);
     }
 
+    // TN: Run params for modulators
     modulator.setWaveform(static_cast<WaveformType>(params.mod.wave));
     modulator.setDetune(0, params.mod.fine);
     modulator.setFrequencyMultiplier(params.mod.ratio);
 
+    // TN: Run params for amp
     ampEnv.setParameters(params.amp);
     filterEnv.setParameters(params.filterEnv);
     fmEnv.setParameters(params.fmEnv);
