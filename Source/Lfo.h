@@ -21,10 +21,20 @@ public:
     void setWaveform(LfoWaveform type) { waveform = type; }
     void setRate(float hz) { increment = hz / (float)sampleRate; }
 
+    float getIncrement() const { return increment; }
+
     // restart the cycle, used on note on so every note's lfo starts the same way
     void reset() {
         phase = 0.0f;
         heldValue = nextRandom();
+    }
+
+    // jump to a phase from outside (free running / bar locked). Small corrections every block,
+    // so a big backwards jump means the cycle wrapped and S&H should take a new step
+    void setPhase(float newPhase) {
+        if (newPhase < phase - 0.5f)
+            heldValue = nextRandom();
+        phase = newPhase;
     }
 
     float processSample() {

@@ -26,7 +26,12 @@ public:
 private:
     juce::Label lfoTitle;
     LabeledComboBox lfoWave;
+    LabeledToggle lfoSync, lfoFreeRun;
     LabeledSlider lfoRate, lfoToPitch, lfoToCutoff, lfoToFmIndex, lfoModWheel;
+    // shares the rate knob's spot, only one of the two is visible
+    LabeledComboBox lfoSyncRate;
+    // swaps the rate knob and the sync rate box whenever sync changes, including from the host
+    juce::ParameterAttachment lfoSyncListener;
 
     juce::Label velocityTitle;
     LabeledSlider velToAmp, velToCutoff, velToFmIndex;

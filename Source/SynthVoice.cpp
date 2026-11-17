@@ -67,7 +67,9 @@ void SynthVoice::startNote(int midiNoteNumber, float noteVelocity, juce::Synthes
     modulator.startNote(from, noteTarget, glideSeconds);
 
     filter.reset();
-    lfo.reset();
+    // free running lfos take their phase from the processor in renderNextBlock instead
+    if (!params.lfo.freeRun)
+        lfo.reset();
     ampEnv.noteOn();
     filterEnv.noteOn();
     fmEnv.noteOn();
@@ -105,6 +107,11 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int sta
     const int numChannels = outputBuffer.getNumChannels();
 
     const auto& lfoParams = params.lfo;
+    // free running: every voice follows the shared phase, offset to where this sub-block starts in the buffer
+    if (lfoParams.freeRun) {
+        const float p = params.lfoBlockStartPhase + startSample * lfo.getIncrement();
+        lfo.setPhase(p - std::floor(p));
+    }
     // the mod wheel fades the lfo in, fully when lfo modWheel is 1
     const float lfoDepth = 1.0f - lfoParams.modWheel + lfoParams.modWheel * engine.getModWheel();
     // velocity is fixed for the note, so its contributions are constant across the block
@@ -171,7 +178,7 @@ void SynthVoice::applyParams() {
     filter.setResonance(params.filter.resonance);
 
     lfo.setWaveform(static_cast<LfoWaveform>(params.lfo.wave));
-    lfo.setRate(params.lfo.rate);
+    lfo.setRate(LfoSync::effectiveRateHz(params.lfo, params.bpm));
 
     mixSmoothed.setTargetValue(params.mix);
     fmIndexSmoothed.setTargetValue(params.mod.index);

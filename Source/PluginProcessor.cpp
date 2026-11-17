@@ -152,6 +152,18 @@ void _2xOscSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
     // voices read this snapshot while rendering
     pointers.load(params);
 
+    // host tempo and song position for the synced lfo, the standalone app has no playhead so this keeps 120
+    juce::Optional<double> ppqPosition;
+    if (auto* hostPlayHead = getPlayHead()) {
+        if (auto position = hostPlayHead->getPosition()) {
+            if (auto hostBpm = position->getBpm())
+                params.bpm = *hostBpm;
+            if (position->getIsPlaying())
+                ppqPosition = position->getPpqPosition();
+        }
+    }
+    updateLfoBlockPhase(ppqPosition, buffer.getNumSamples());
+
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
@@ -164,6 +176,25 @@ void _2xOscSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
     const float masterGain = juce::Decibels::decibelsToGain(params.masterGainDb);
     buffer.applyGainRamp(0, buffer.getNumSamples(), lastMasterGain, masterGain);
     lastMasterGain = masterGain;
+}
+
+void _2xOscSynthAudioProcessor::updateLfoBlockPhase(juce::Optional<double> ppqPosition, int numSamples)
+{
+    const auto& lfo = params.lfo;
+
+    if (lfo.sync && ppqPosition.hasValue()) {
+        // bar locked: how many lfo cycles fit into the song position so far, keep the fraction
+        const double beatsPerCycle = LfoSync::divisions[juce::jlimit(0, LfoSync::numDivisions - 1, lfo.syncDivision)].beats;
+        const double cycles = *ppqPosition / beatsPerCycle;
+        lfoFreePhase = (float)(cycles - std::floor(cycles));
+    }
+
+    params.lfoBlockStartPhase = lfoFreePhase;
+
+    // keep running between blocks, so stopping the transport or unsyncing carries on smoothly
+    const double cyclesThisBlock = LfoSync::effectiveRateHz(lfo, params.bpm) * numSamples / getSampleRate();
+    const double next = lfoFreePhase + cyclesThisBlock;
+    lfoFreePhase = (float)(next - std::floor(next));
 }
 
 //==============================================================================
@@ -250,6 +281,10 @@ juce::AudioProcessorValueTreeState::ParameterLayout _2xOscSynthAudioProcessor::c
     layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::lfoToCutoff, 1 }, "LFO to Cutoff", Range(0.0f, 4.0f, 0.01f), 0.0f));
     layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::lfoToFmIndex, 1 }, "LFO to FM Index", Range(0.0f, 10.0f, 0.01f), 0.0f));
     layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::lfoModWheel, 1 }, "LFO Mod Wheel", Range(0.0f, 1.0f, 0.01f), 0.0f));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ ParamIDs::lfoSync, 1 }, "LFO Sync", false));
+    layout.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ ParamIDs::lfoSyncRate, 1 }, "LFO Sync Rate",
+        LfoSync::names(), LfoSync::defaultDivision));
+    layout.add(std::make_unique<juce::AudioParameterBool>(juce::ParameterID{ ParamIDs::lfoFreeRun, 1 }, "LFO Free Run", false));
 
     // velocity
     layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::velToAmp, 1 }, "Velocity to Amp", Range(0.0f, 1.0f, 0.01f), 1.0f));

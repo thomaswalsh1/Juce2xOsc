@@ -67,6 +67,10 @@ private:
     SynthParams params;         // loaded once per block, read by every voice
     SynthEngine synth;
     float lastMasterGain = 1.0f;
+    float lfoFreePhase = 0.0f;  // shared lfo phase in cycles, for free running / bar locked mode
+
+    // sets params.lfoBlockStartPhase from the song position (when synced and playing) or the free running phase
+    void updateLfoBlockPhase(juce::Optional<double> ppqPosition, int numSamples);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (_2xOscSynthAudioProcessor)
 };

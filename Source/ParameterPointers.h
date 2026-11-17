@@ -87,6 +87,9 @@ struct ParameterPointers {
     std::atomic<float>* lfoToCutoff = nullptr;
     std::atomic<float>* lfoToFmIndex = nullptr;
     std::atomic<float>* lfoModWheel = nullptr;
+    std::atomic<float>* lfoSync = nullptr;
+    std::atomic<float>* lfoSyncRate = nullptr;
+    std::atomic<float>* lfoFreeRun = nullptr;
 
     std::atomic<float>* velToAmp = nullptr;
     std::atomic<float>* velToCutoff = nullptr;
@@ -123,6 +126,9 @@ struct ParameterPointers {
         lfoToCutoff = get(state, ParamIDs::lfoToCutoff);
         lfoToFmIndex = get(state, ParamIDs::lfoToFmIndex);
         lfoModWheel = get(state, ParamIDs::lfoModWheel);
+        lfoSync = get(state, ParamIDs::lfoSync);
+        lfoSyncRate = get(state, ParamIDs::lfoSyncRate);
+        lfoFreeRun = get(state, ParamIDs::lfoFreeRun);
 
         velToAmp = get(state, ParamIDs::velToAmp);
         velToCutoff = get(state, ParamIDs::velToCutoff);
@@ -159,6 +165,9 @@ struct ParameterPointers {
         p.lfo.toCutoff = lfoToCutoff->load();
         p.lfo.toFmIndex = lfoToFmIndex->load();
         p.lfo.modWheel = lfoModWheel->load();
+        p.lfo.sync = lfoSync->load() > 0.5f;
+        p.lfo.syncDivision = (int)lfoSyncRate->load();
+        p.lfo.freeRun = lfoFreeRun->load() > 0.5f;
 
         p.velocity.toAmp = velToAmp->load();
         p.velocity.toCutoff = velToCutoff->load();

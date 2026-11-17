@@ -52,6 +52,9 @@ namespace ParamIDs {
     inline const juce::String lfoToCutoff = "LFO_TO_CUTOFF";
     inline const juce::String lfoToFmIndex = "LFO_TO_FM_INDEX";
     inline const juce::String lfoModWheel = "LFO_MODWHEEL";
+    inline const juce::String lfoSync = "LFO_SYNC";
+    inline const juce::String lfoSyncRate = "LFO_SYNC_RATE";
+    inline const juce::String lfoFreeRun = "LFO_FREE_RUN";
 
     // velocity
     inline const juce::String velToAmp = "VEL_TO_AMP";
@@ -96,6 +99,39 @@ inline const juce::StringArray waveformNames { "Sine", "Saw", "Square" };
 inline const juce::StringArray filterTypeNames { "Low Pass", "Band Pass", "High Pass" };
 inline const juce::StringArray lfoWaveformNames { "Sine", "Triangle", "Saw", "Square", "S&H" };
 
+// tempo synced lfo rates: each division is the length of one lfo cycle in quarter note beats
+namespace LfoSync {
+    struct Division {
+        const char* name;
+        float beats;
+    };
+
+    inline constexpr Division divisions[] = {
+        { "4 Bars", 16.0f },  { "2 Bars", 8.0f },     { "1 Bar", 4.0f },
+        { "1/2", 2.0f },      { "1/2 D", 3.0f },      { "1/2 T", 4.0f / 3.0f },
+        { "1/4", 1.0f },      { "1/4 D", 1.5f },      { "1/4 T", 2.0f / 3.0f },
+        { "1/8", 0.5f },      { "1/8 D", 0.75f },     { "1/8 T", 1.0f / 3.0f },
+        { "1/16", 0.25f },    { "1/16 D", 0.375f },   { "1/16 T", 1.0f / 6.0f },
+        { "1/32", 0.125f },
+    };
+
+    constexpr int numDivisions = (int)std::size(divisions);
+    constexpr int defaultDivision = 6; // 1/4
+
+    inline juce::StringArray names() {
+        juce::StringArray result;
+        for (const auto& d : divisions)
+            result.add(d.name);
+        return result;
+    }
+
+    // beats per second divided by beats per cycle gives cycles per second
+    inline float rateHz(int divisionIndex, double bpm) {
+        const auto& division = divisions[juce::jlimit(0, numDivisions - 1, divisionIndex)];
+        return (float)(bpm / 60.0) / division.beats;
+    }
+}
+
 struct OscParameters {
     int wave = 0;
     int coarse = 0;
@@ -133,6 +169,9 @@ struct LfoParameters {
     float toCutoff = 0.0f;      // octaves
     float toFmIndex = 0.0f;     // radians
     float modWheel = 0.0f;      // 0 = full depth always, 1 = depth set entirely by the mod wheel
+    bool sync = false;          // when on, the rate comes from the host tempo instead of rate
+    int syncDivision = LfoSync::defaultDivision;
+    bool freeRun = false;       // off = restart every note, on = shared phase (locked to the bar when synced and playing)
 };
 
 struct VelocityParameters {
@@ -153,4 +192,16 @@ struct SynthParams {
     float mix = 0.5f;
     float glideTime = 0.0f;
     float masterGainDb = 0.0f;
+
+    // from the host, not a parameter. Keeps the last known tempo (or 120) when the host doesn't report one
+    double bpm = 120.0;
+    // lfo phase (cycles) at the first sample of this block, used when the lfo is free running
+    float lfoBlockStartPhase = 0.0f;
 };
+
+namespace LfoSync {
+    // the rate the lfo actually runs at, synced or not
+    inline float effectiveRateHz(const LfoParameters& lfo, double bpm) {
+        return lfo.sync ? rateHz(lfo.syncDivision, bpm) : lfo.rate;
+    }
+}
