@@ -56,11 +56,12 @@ OscPage::OscPage(juce::AudioProcessorValueTreeState& apvts)
     : osc1(apvts, "OSC1", ParamIDs::osc1 + ParamIDs::wave, ParamIDs::osc1 + ParamIDs::coarse, "Coarse", ParamIDs::osc1 + ParamIDs::fine),
       osc2(apvts, "OSC2", ParamIDs::osc2 + ParamIDs::wave, ParamIDs::osc2 + ParamIDs::coarse, "Coarse", ParamIDs::osc2 + ParamIDs::fine),
       ampEnvelope(apvts, ParamIDs::amp, "Amp"),
+      voiceMode(apvts, ParamIDs::voiceMode, "Voice"),
       mix(apvts, ParamIDs::oscMix, "Mix", juce::Slider::LinearHorizontal),
       glide(apvts, ParamIDs::glideTime, "Glide", juce::Slider::LinearHorizontal),
       masterGain(apvts, ParamIDs::masterGain, "Master", juce::Slider::LinearHorizontal)
 {
-    for (auto* c : std::initializer_list<juce::Component*> { &osc1, &osc2, &ampEnvelope, &mix, &glide, &masterGain })
+    for (auto* c : std::initializer_list<juce::Component*> { &osc1, &osc2, &ampEnvelope, &voiceMode, &mix, &glide, &masterGain })
         addAndMakeVisible(c);
 }
 
@@ -84,5 +85,5 @@ void OscPage::resized()
     ampEnvelope.setBounds(bounds.removeFromTop(rowHeight * 2));
     bounds.removeFromTop(gap);
 
-    layoutRow(bounds, { &mix, &glide, &masterGain });
+    layoutRow(bounds, { &voiceMode, &mix, &glide, &masterGain });
 }

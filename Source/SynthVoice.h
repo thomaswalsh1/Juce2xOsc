@@ -32,6 +32,10 @@ public:
     void controllerMoved(int controllerNumber, int newControllerValue) override;
     void renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int startSample, int numSamples) override;
 
+    // mono/legato: move this already sounding voice to a new note.
+    // retrigger restarts the envelopes (and lfo), glide slides the pitch over the glide time
+    void changeNote(int midiNoteNumber, float noteVelocity, bool retrigger, bool glide);
+
 private:
     static constexpr int numCarriers = SynthConstants::numCarriers;
 

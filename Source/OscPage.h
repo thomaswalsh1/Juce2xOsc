@@ -50,6 +50,7 @@ private:
     OscillatorPanel osc2;
     EnvelopePanel ampEnvelope;
 
+    LabeledComboBox voiceMode;
     LabeledSlider mix;
     LabeledSlider glide;
     LabeledSlider masterGain;

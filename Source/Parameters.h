@@ -62,6 +62,7 @@ namespace ParamIDs {
     inline const juce::String velToFmIndex = "VEL_TO_FM_INDEX";
 
     // global
+    inline const juce::String voiceMode = "VOICE_MODE";
     inline const juce::String oscMix = "OSC_MIX";
     inline const juce::String glideTime = "GLIDE_TIME";
     inline const juce::String masterGain = "MASTER_GAIN";
@@ -98,6 +99,13 @@ enum class LfoWaveform
 inline const juce::StringArray waveformNames { "Sine", "Saw", "Square" };
 inline const juce::StringArray filterTypeNames { "Low Pass", "Band Pass", "High Pass" };
 inline const juce::StringArray lfoWaveformNames { "Sine", "Triangle", "Saw", "Square", "S&H" };
+
+enum VoiceMode
+{
+    Poly, Mono, Legato
+};
+
+inline const juce::StringArray voiceModeNames { "Poly", "Mono", "Legato" };
 
 // tempo synced lfo rates: each division is the length of one lfo cycle in quarter note beats
 namespace LfoSync {
@@ -189,6 +197,7 @@ struct SynthParams {
     FilterParameters filter;
     LfoParameters lfo;
     VelocityParameters velocity;
+    int voiceMode = VoiceMode::Poly;
     float mix = 0.5f;
     float glideTime = 0.0f;
     float masterGainDb = 0.0f;

@@ -75,6 +75,30 @@ void SynthVoice::startNote(int midiNoteNumber, float noteVelocity, juce::Synthes
     fmEnv.noteOn();
 }
 
+void SynthVoice::changeNote(int midiNoteNumber, float noteVelocity, bool retrigger, bool glide) {
+    applyParams();
+
+    keytrackOctaves = (midiNoteNumber - 60) / 12.0f;
+
+    const float noteTarget = (float)juce::MidiMessage::getMidiNoteInHertz(midiNoteNumber);
+    const float glideSeconds = glide && params.glideTime > 0.001f ? params.glideTime : 0.0f;
+    for (auto& carrier : carriers) {
+        carrier.glideTo(noteTarget, glideSeconds);
+    }
+    modulator.glideTo(noteTarget, glideSeconds);
+
+    if (retrigger) {
+        velocity = noteVelocity;
+        level = 1.0f - params.velocity.toAmp + params.velocity.toAmp * velocity;
+        if (!params.lfo.freeRun)
+            lfo.reset();
+        // juce::ADSR attacks from its current level, so retriggering mid note doesn't click
+        ampEnv.noteOn();
+        filterEnv.noteOn();
+        fmEnv.noteOn();
+    }
+}
+
 void SynthVoice::stopNote(float, bool allowTailOff) {
     if (allowTailOff) {
         ampEnv.noteOff();

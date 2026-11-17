@@ -95,6 +95,7 @@ struct ParameterPointers {
     std::atomic<float>* velToCutoff = nullptr;
     std::atomic<float>* velToFmIndex = nullptr;
 
+    std::atomic<float>* voiceMode = nullptr;
     std::atomic<float>* mix = nullptr;
     std::atomic<float>* glideTime = nullptr;
     std::atomic<float>* masterGain = nullptr;
@@ -134,6 +135,7 @@ struct ParameterPointers {
         velToCutoff = get(state, ParamIDs::velToCutoff);
         velToFmIndex = get(state, ParamIDs::velToFmIndex);
 
+        voiceMode = get(state, ParamIDs::voiceMode);
         mix = get(state, ParamIDs::oscMix);
         glideTime = get(state, ParamIDs::glideTime);
         masterGain = get(state, ParamIDs::masterGain);
@@ -173,6 +175,7 @@ struct ParameterPointers {
         p.velocity.toCutoff = velToCutoff->load();
         p.velocity.toFmIndex = velToFmIndex->load();
 
+        p.voiceMode = (int)voiceMode->load();
         p.mix = mix->load();
         p.glideTime = glideTime->load();
         p.masterGainDb = masterGain->load();

@@ -47,6 +47,15 @@ void Oscillator::startNote(float fromHz, float toHz, float glideSeconds) {
     phase = 0.0f;
 }
 
+void Oscillator::glideTo(float toHz, float glideSeconds) {
+    // reset() snaps to the old target, so grab where the pitch actually is first (it may be mid glide)
+    const float current = noteFrequency.getCurrentValue();
+    noteFrequency.reset(sampleRate, glideSeconds);
+    noteFrequency.setCurrentAndTargetValue(current);
+    noteFrequency.setTargetValue(toHz);
+    // phase keeps running, so the note change doesn't click
+}
+
 void Oscillator::updateOffsetRatio(bool force) {
     const float semitones = coarse + fine / 100.0f + bend;
     const float ratio = std::pow(2.0f, semitones / 12.0f);

@@ -20,6 +20,7 @@
         <FILE id="pPtr3H" name="ParameterPointers.h" compile="0" resource="0"
               file="Source/ParameterPointers.h"/>
         <FILE id="pRm8Kq" name="Parameters.h" compile="0" resource="0" file="Source/Parameters.h"/>
+        <FILE id="sEng2C" name="SynthEngine.cpp" compile="1" resource="0" file="Source/SynthEngine.cpp"/>
         <FILE id="sEng2H" name="SynthEngine.h" compile="0" resource="0" file="Source/SynthEngine.h"/>
         <FILE id="sYn5Sd" name="SynthSound.h" compile="0" resource="0" file="Source/SynthSound.h"/>
         <FILE id="zHphAx" name="SynthVoice.cpp" compile="1" resource="0" file="Source/SynthVoice.cpp"/>

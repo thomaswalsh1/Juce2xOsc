@@ -29,6 +29,8 @@ public:
     void setFrequencyMultiplier(float multiplier) { frequencyMultiplier.setTargetValue(multiplier); }
 
     void startNote(float fromHz, float toHz, float glideSeconds);
+    // change pitch on a note that's already sounding (mono/legato), from wherever the pitch is now
+    void glideTo(float toHz, float glideSeconds);
 
     // phaseOffset is in cycles (1.0 = one full period), pitchRatio scales the frequency (lfo vibrato)
     float processSample(float phaseOffset = 0.0f, float pitchRatio = 1.0f) {

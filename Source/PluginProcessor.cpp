@@ -164,6 +164,8 @@ void _2xOscSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
     }
     updateLfoBlockPhase(ppqPosition, buffer.getNumSamples());
 
+    synth.setVoiceMode(static_cast<VoiceMode>(params.voiceMode));
+
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
@@ -292,6 +294,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout _2xOscSynthAudioProcessor::c
     layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::velToFmIndex, 1 }, "Velocity to FM Index", Range(0.0f, 10.0f, 0.01f), 0.0f));
 
     // global
+    layout.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ ParamIDs::voiceMode, 1 }, "Voice Mode", voiceModeNames, VoiceMode::Poly));
     layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::oscMix, 1 }, "Osc Mix", 0.0f, 1.0f, 0.5f));
     layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::glideTime, 1 }, "Glide Time", Range(0.0f, 2.0f, 0.001f, 0.4f), 0.0f));
     layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::masterGain, 1 }, "Master Gain", Range(-36.0f, 6.0f, 0.1f), 0.0f));
