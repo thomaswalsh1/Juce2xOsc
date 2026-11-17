@@ -153,6 +153,7 @@ void _2xOscSynthAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
     pointers.load(params);
 
     // host tempo and song position for the synced lfo, the standalone app has no playhead so this keeps 120
+    // TN: get playhead load parameters and bpm
     juce::Optional<double> ppqPosition;
     if (auto* hostPlayHead = getPlayHead()) {
         if (auto position = hostPlayHead->getPosition()) {

@@ -27,11 +27,13 @@ void SynthVoice::prepareToPlay(double newSampleRate, int samplesPerBlock) {
     juce::dsp::ProcessSpec spec { sampleRate, (juce::uint32)samplesPerBlock, 1 };
     filter.prepare(spec);
 
+    // TN: Make the smoothed values reset
     mixSmoothed.reset(sampleRate, SynthConstants::mixSmoothingSeconds);
     fmIndexSmoothed.reset(sampleRate, SynthConstants::controlSmoothingSeconds);
     cutoffSmoothed.reset(sampleRate, SynthConstants::controlSmoothingSeconds);
 
     applyParams();
+    // TN: After applying new parameters, set new target values for smoothing
     mixSmoothed.setCurrentAndTargetValue(params.mix);
     fmIndexSmoothed.setCurrentAndTargetValue(params.mod.index);
     cutoffSmoothed.setCurrentAndTargetValue(params.filter.cutoff);
@@ -50,13 +52,19 @@ void SynthVoice::startNote(int midiNoteNumber, float noteVelocity, juce::Synthes
 
     velocity = noteVelocity;
     // velocity sensitivity: at 0 every note is full volume, at 1 volume follows velocity
+    // TN: Level = 1.0f - the most velocity we can change + the actual change amount (i think?)
     level = 1.0f - params.velocity.toAmp + params.velocity.toAmp * velocity;
+
+    // TN: we need to store keytrack octaves as it will be used by the midi note number
+    // TN: this is NOT "get the midi note in hz"
     keytrackOctaves = (midiNoteNumber - 60) / 12.0f;
 
     // glide from whatever note was played before this one
     const float noteTarget = (float)juce::MidiMessage::getMidiNoteInHertz(midiNoteNumber);
+    // TN: "Where are we gliding from?"
     const float glideSource = engine.getGlideSourceHz();
     const bool glideActive = params.glideTime > 0.001f && glideSource > 0.0f;
+    // TN: "If we are gliding, set the from note to the glidesource"
     const float from = glideActive ? glideSource : noteTarget;
     const float glideSeconds = glideActive ? params.glideTime : 0.0f;
 
@@ -66,6 +74,7 @@ void SynthVoice::startNote(int midiNoteNumber, float noteVelocity, juce::Synthes
     }
     modulator.startNote(from, noteTarget, glideSeconds);
 
+    // TN: "Restart the filter envelope"
     filter.reset();
     // free running lfos take their phase from the processor in renderNextBlock instead
     if (!params.lfo.freeRun)
@@ -133,7 +142,9 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int sta
     const auto& lfoParams = params.lfo;
     // free running: every voice follows the shared phase, offset to where this sub-block starts in the buffer
     if (lfoParams.freeRun) {
+        // TN: Our phase is the start phase of the block + our starting sample * how much changes each sample
         const float p = params.lfoBlockStartPhase + startSample * lfo.getIncrement();
+        // TN: Realign each block
         lfo.setPhase(p - std::floor(p));
     }
     // the mod wheel fades the lfo in, fully when lfo modWheel is 1

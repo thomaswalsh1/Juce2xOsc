@@ -18,21 +18,36 @@
 #include "FilterPage.h"
 #include "ModPage.h"
 
-// oscillators and the fm modulator
-class OscillatorTabs : public juce::TabbedComponent
+// tab bar + page, styled the same for both tab areas
+class StyledTabs : public juce::TabbedComponent
 {
 public:
-    OscillatorTabs(juce::AudioProcessorValueTreeState& apvts)
-        : juce::TabbedComponent(juce::TabbedButtonBar::TabsAtTop), oscPage(apvts), fmPage(apvts)
+    StyledTabs() : juce::TabbedComponent(juce::TabbedButtonBar::TabsAtTop)
     {
-        setTabBarDepth(20);
-        addTab("Osc", Style::accent, &oscPage, false);
-        addTab("FM", Style::accent, &fmPage, false);
-        setCurrentTabIndex(0, false);
+        setTabBarDepth(Style::Layout::tabBarHeight);
+        setOutline(0);
+    }
+
+    void addPage(const juce::String& name, juce::Component& page)
+    {
+        // the colour is unused, CustomLookAndFeel::drawTabButton picks the tab colours
+        addTab(name, Style::panel, &page, false);
     }
 
     void paint(juce::Graphics& g) override {
-        g.fillAll(Style::background2);
+        g.fillAll(Style::page);
+    }
+};
+
+// oscillators and the fm modulator
+class OscillatorTabs : public StyledTabs
+{
+public:
+    OscillatorTabs(juce::AudioProcessorValueTreeState& apvts) : oscPage(apvts), fmPage(apvts)
+    {
+        addPage("OSC", oscPage);
+        addPage("FM", fmPage);
+        setCurrentTabIndex(0, false);
     }
 
 private:
@@ -40,21 +55,15 @@ private:
     FmPage fmPage;
 };
 
-// filter and other effects
-class EffectsTabs : public juce::TabbedComponent
+// filter and modulation
+class EffectsTabs : public StyledTabs
 {
 public:
-    EffectsTabs(juce::AudioProcessorValueTreeState& apvts)
-        : juce::TabbedComponent(juce::TabbedButtonBar::TabsAtTop), filterPage(apvts), modPage(apvts)
+    EffectsTabs(juce::AudioProcessorValueTreeState& apvts) : filterPage(apvts), modPage(apvts)
     {
-        setTabBarDepth(20);
-        addTab("Filter", Style::accent, &filterPage, false);
-        addTab("Mod", Style::accent, &modPage, false);
+        addPage("FILTER", filterPage);
+        addPage("MOD", modPage);
         setCurrentTabIndex(0, false);
-    }
-
-    void paint(juce::Graphics& g) override {
-        g.fillAll(Style::background2);
     }
 
 private:

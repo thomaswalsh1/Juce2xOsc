@@ -12,6 +12,8 @@
 #include "FilterPage.h"
 #include "Parameters.h"
 
+using namespace Style::Layout;
+
 //==============================================================================
 FilterPage::FilterPage(juce::AudioProcessorValueTreeState& apvts)
     : type(apvts, ParamIDs::filterType, "Type"),
@@ -19,36 +21,28 @@ FilterPage::FilterPage(juce::AudioProcessorValueTreeState& apvts)
       resonance(apvts, ParamIDs::filterResonance, "Res"),
       envAmount(apvts, ParamIDs::filterEnvAmount, "Env Amt"),
       keytrack(apvts, ParamIDs::filterKeytrack, "Key"),
-      filterEnvelope(apvts, ParamIDs::filterEnv, "Filter Env")
+      filterEnvelope(apvts, ParamIDs::filterEnv, "FILTER ENVELOPE")
 {
-    setupLabel(titleLabel, "Filter", Style::FontSize::large, juce::Justification::left);
+    addAndMakeVisible(filterSection);
+    addAndMakeVisible(filterEnvelope);
 
-    for (auto* c : std::initializer_list<juce::Component*> { &titleLabel, &type, &cutoff, &resonance, &envAmount, &keytrack, &filterEnvelope })
-        addAndMakeVisible(c);
+    for (auto* c : std::initializer_list<juce::Component*> { &type, &cutoff, &resonance, &envAmount, &keytrack })
+        filterSection.addAndMakeVisible(c);
 }
 
 void FilterPage::paint (juce::Graphics& g)
 {
-    g.fillAll(Style::background2);
-
-    g.setColour(Style::accent);
-    g.fillRect(filterArea);
+    g.fillAll(Style::page);
 }
 
 void FilterPage::resized()
 {
-    auto bounds = getLocalBounds().reduced(10);
-    const int gap = 10;
+    auto bounds = getLocalBounds().reduced(spacing);
 
-    filterArea = bounds.removeFromTop((bounds.getHeight() - gap) / 2);
-    bounds.removeFromTop(gap);
-
-    auto filterBounds = filterArea;
-    titleLabel.setBounds(filterBounds.removeFromTop(20).withTrimmedLeft(5));
-    filterBounds.reduce(5, 5);
-    type.setBounds(filterBounds.removeFromLeft(90).withSizeKeepingCentre(90, 50));
-    filterBounds.removeFromLeft(5);
-    layoutRow(filterBounds, { &cutoff, &resonance, &envAmount, &keytrack });
+    filterSection.setBounds(takeTopRow(bounds));
+    auto content = filterSection.getContentBounds();
+    layoutSelectorRow(takeSelectorRow(content), { &type });
+    layoutColumns(content, { &cutoff, &resonance, &envAmount, &keytrack }, knobColumnWidth);
 
     filterEnvelope.setBounds(bounds);
 }

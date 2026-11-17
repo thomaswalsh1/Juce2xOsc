@@ -11,10 +11,10 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "OscPage.h"
+#include "UiHelpers.h"
 
 //==============================================================================
-// fm modulator settings, its envelope, and which carriers it modulates
+// top row: the fm modulator and which carriers it modulates. bottom row: its envelope
 class FmPage  : public juce::Component
 {
 public:
@@ -24,9 +24,11 @@ public:
     void resized() override;
 
 private:
-    OscillatorPanel modulatorPanel;
+    Section modulatorSection { "MODULATOR" };
+    LabeledComboBox wave;
+    LabeledSlider ratio, fine, index;
 
-    LabeledSlider index;
+    Section routingSection { "ROUTING" };
     LabeledToggle toOsc1;
     LabeledToggle toOsc2;
 

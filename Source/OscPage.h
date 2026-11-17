@@ -15,28 +15,22 @@
 #include "Parameters.h"
 #include "UiHelpers.h"
 
-// waveform and tuning controls for one oscillator
-class OscillatorPanel : public juce::Component {
+// waveform and tuning for one carrier oscillator
+class OscillatorPanel : public Section {
 public:
-    // tuneID/tuneText is the first tuning knob: coarse for carriers, ratio for the modulator
-    OscillatorPanel(juce::AudioProcessorValueTreeState& apvts, const juce::String& title, const juce::String& waveID,
-                    const juce::String& tuneID, const juce::String& tuneText, const juce::String& fineID);
+    OscillatorPanel(juce::AudioProcessorValueTreeState& apvts, const juce::String& title, const juce::String& idPrefix);
 
-    void paint(juce::Graphics&) override;
     void resized() override;
 
 private:
-    juce::Label titleLabel;
-    juce::Label tuneLabel;
     LabeledComboBox wave;
-    LabeledSlider tune, fine;
-
-    juce::Rectangle<int> tuneArea;
+    LabeledSlider coarse, fine;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(OscillatorPanel)
 };
 
 //==============================================================================
+// top row: both oscillators. bottom row: amp envelope and the global voice / mix / output controls
 class OscPage : public juce::Component
 {
 public:
@@ -50,6 +44,7 @@ private:
     OscillatorPanel osc2;
     EnvelopePanel ampEnvelope;
 
+    Section globalSection { "GLOBAL" };
     LabeledComboBox voiceMode;
     LabeledSlider mix;
     LabeledSlider glide;

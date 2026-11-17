@@ -68,6 +68,7 @@ namespace ParamIDs {
     inline const juce::String masterGain = "MASTER_GAIN";
 }
 
+// TN: These are variables that are constant and are used when creating a synth object
 namespace SynthConstants {
     constexpr int numVoices = 12;
     constexpr int numCarriers = 2;
@@ -113,7 +114,7 @@ namespace LfoSync {
         const char* name;
         float beats;
     };
-
+    // TN: Mapping between name and how many beats
     inline constexpr Division divisions[] = {
         { "4 Bars", 16.0f },  { "2 Bars", 8.0f },     { "1 Bar", 4.0f },
         { "1/2", 2.0f },      { "1/2 D", 3.0f },      { "1/2 T", 4.0f / 3.0f },
@@ -136,6 +137,7 @@ namespace LfoSync {
     // beats per second divided by beats per cycle gives cycles per second
     inline float rateHz(int divisionIndex, double bpm) {
         const auto& division = divisions[juce::jlimit(0, numDivisions - 1, divisionIndex)];
+        // TN: beats per second / how many beats in one cycle
         return (float)(bpm / 60.0) / division.beats;
     }
 }
@@ -148,8 +150,10 @@ struct OscParameters {
 
 struct ModulatorParameters {
     int wave = 0;
+    // TN: Ratio means the modulators frequency as a multiple of the note
     float ratio = 1.0f;
     float fine = 0.0f;
+    // TN: Index means how hard the modulator pushes the phase
     float index = 0.0f;
     bool toOsc1 = false;
     bool toOsc2 = false;
@@ -165,8 +169,11 @@ struct EnvelopeParameters {
 struct FilterParameters {
     int type = 0;
     float cutoff = 20000.0f;
+    // TN: resonance is the boost at the cutoff frequency
     float resonance = 0.707f;
+    // TN: env amount shows what frequencies are being affected, like how high the curve is essentially
     float envAmount = 0.0f;     // octaves
+    // TN: how the envelope moves with the note you play
     float keytrack = 0.0f;      // 0 = none, 1 = cutoff follows the note fully
 };
 

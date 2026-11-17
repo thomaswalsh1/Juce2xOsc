@@ -6,6 +6,12 @@
 
     Small reusable UI pieces shared by the pages.
 
+    Layout rules every page follows:
+      - pages are filled with Style::page and padded by Layout::spacing
+      - controls always live inside a Section, sections are separated by Layout::spacing
+      - a section may start with a selector row (combo boxes / toggles), then a row of
+        knob or fader columns, all left aligned so columns line up between sections
+
   ==============================================================================
 */
 
@@ -17,10 +23,41 @@
 void setupLabel(juce::Label& label, const juce::String& text, float fontSize,
                 juce::Justification justification = juce::Justification::centred);
 
-// lays the components out side by side, sharing the width equally
-void layoutRow(juce::Rectangle<int> bounds, std::initializer_list<juce::Component*> components);
+// every page is two rows of sections: returns the top row and leaves the bottom row in area
+juce::Rectangle<int> takeTopRow(juce::Rectangle<int>& area);
 
-// label on top, slider below (rotary knob by default), attached to an apvts parameter
+// splits the selector row (and the gap under it) off the top of a section's content
+juce::Rectangle<int> takeSelectorRow(juce::Rectangle<int>& content);
+
+// combo boxes and toggles left to right, each at its standard width
+void layoutSelectorRow(juce::Rectangle<int> area, std::initializer_list<juce::Component*> components);
+
+// equal columns left to right, each at most maxColumnWidth wide
+void layoutColumns(juce::Rectangle<int> area, std::initializer_list<juce::Component*> components, int maxColumnWidth);
+
+// total width of a section whose content is contentWidth wide
+int sectionWidth(int contentWidth);
+
+//==============================================================================
+// titled box that every group of controls sits in. Controls are added as children of the
+// section and laid out inside getContentBounds()
+class Section : public juce::Component {
+public:
+    explicit Section(const juce::String& title);
+
+    juce::Rectangle<int> getContentBounds() const;
+
+    void paint(juce::Graphics&) override;
+
+private:
+    juce::String title;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Section)
+};
+
+//==============================================================================
+// label on top, then a rotary knob or vertical fader with its value box underneath,
+// attached to an apvts parameter
 class LabeledSlider : public juce::Component {
 public:
     LabeledSlider(juce::AudioProcessorValueTreeState& apvts, const juce::String& paramID, const juce::String& text,
@@ -51,7 +88,7 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LabeledComboBox)
 };
 
-// label on top, toggle button below, attached to an apvts parameter
+// label on top, toggle box below, attached to an apvts parameter
 class LabeledToggle : public juce::Component {
 public:
     LabeledToggle(juce::AudioProcessorValueTreeState& apvts, const juce::String& paramID, const juce::String& text);
@@ -66,16 +103,15 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LabeledToggle)
 };
 
-// titled box with ADSR knobs, for any envelope using the ParamIDs envelope suffixes
-class EnvelopePanel : public juce::Component {
+//==============================================================================
+// section with ADSR knobs, for any envelope using the ParamIDs envelope suffixes
+class EnvelopePanel : public Section {
 public:
     EnvelopePanel(juce::AudioProcessorValueTreeState& apvts, const juce::String& idPrefix, const juce::String& title);
 
-    void paint(juce::Graphics&) override;
     void resized() override;
 
 private:
-    juce::Label titleLabel;
     LabeledSlider attack, decay, sustain, release;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(EnvelopePanel)

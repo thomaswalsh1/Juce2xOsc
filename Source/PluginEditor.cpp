@@ -9,6 +9,8 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+using namespace Style::Layout;
+
 //==============================================================================
 _2xOscSynthAudioProcessorEditor::_2xOscSynthAudioProcessorEditor (_2xOscSynthAudioProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p), oscillatorTabs(p.apvts), effectsTabs(p.apvts)
@@ -19,24 +21,27 @@ _2xOscSynthAudioProcessorEditor::_2xOscSynthAudioProcessorEditor (_2xOscSynthAud
     // header
     header.setText("2xOsc", juce::dontSendNotification);
     header.setFont(Style::font(Style::FontSize::heading));
-    header.setColour(juce::Label::textColourId, Style::textMain);
+    header.setColour(juce::Label::textColourId, Style::textOnDark);
     header.setJustificationType(juce::Justification::centredLeft);
+    header.setBorderSize({});
     addAndMakeVisible(header);
 
     // author
     author.setText("By Tom", juce::dontSendNotification);
-    author.setFont(Style::font(Style::FontSize::medium));
-    author.setColour(juce::Label::textColourId, Style::surface);
+    author.setFont(Style::font(Style::FontSize::small));
+    author.setColour(juce::Label::textColourId, Style::textOnDark.withAlpha(0.6f));
     author.setJustificationType(juce::Justification::centredLeft);
+    author.setBorderSize({});
     addAndMakeVisible(author);
 
     // tabs
     addAndMakeVisible(oscillatorTabs);
     addAndMakeVisible(effectsTabs);
 
+    // the layout is sized for this, every knob column fits at full width
     setResizable(true, true);
-    setResizeLimits(800, 400, 1920, 1080);
-    setSize (800, 400);
+    setResizeLimits(900, 520, 1920, 1080);
+    setSize (900, 520);
 }
 
 _2xOscSynthAudioProcessorEditor::~_2xOscSynthAudioProcessorEditor()
@@ -47,23 +52,27 @@ _2xOscSynthAudioProcessorEditor::~_2xOscSynthAudioProcessorEditor()
 //==============================================================================
 void _2xOscSynthAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    g.fillAll (Style::background);
+    g.fillAll(Style::window);
 
-    g.setColour(Style::background2);
-    g.fillRect(secondaryBackground);
+    g.setColour(Style::page);
+    g.fillRect(body);
 }
 
 void _2xOscSynthAudioProcessorEditor::resized()
 {
     auto bounds = getLocalBounds();
-    auto headingSection = bounds.removeFromTop(48);
-    headingSection.reduce(10, 0);
-    header.setBounds(headingSection.removeFromLeft(80));
-    author.setBounds(headingSection.removeFromLeft(104));
 
-    secondaryBackground = bounds.removeFromTop(13);
+    auto headingSection = bounds.removeFromTop(headerHeight).reduced(spacing * 2, 0);
+    const int headerWidth = juce::roundToInt(juce::GlyphArrangement::getStringWidth(header.getFont(), header.getText()));
+    header.setBounds(headingSection.removeFromLeft(headerWidth + spacing));
+    headingSection.removeFromLeft(spacing);
+    author.setBounds(headingSection);
 
-    int leftWidth = bounds.getWidth() / 2;
-    oscillatorTabs.setBounds(bounds.removeFromLeft(leftWidth));
-    effectsTabs.setBounds(bounds);
+    body = bounds;
+
+    // two tab areas side by side, same spacing around and between them as everywhere else
+    auto tabsArea = body.reduced(spacing);
+    oscillatorTabs.setBounds(tabsArea.removeFromLeft((tabsArea.getWidth() - spacing) / 2));
+    tabsArea.removeFromLeft(spacing);
+    effectsTabs.setBounds(tabsArea);
 }

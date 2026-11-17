@@ -10,23 +10,77 @@
 #include "UiHelpers.h"
 #include "Parameters.h"
 
-static constexpr int labelHeight = 20;
+using namespace Style::Layout;
 
 void setupLabel(juce::Label& label, const juce::String& text, float fontSize, juce::Justification justification)
 {
     label.setText(text, juce::dontSendNotification);
     label.setJustificationType(justification);
-    label.setColour(juce::Label::textColourId, Style::textSecondary);
+    label.setColour(juce::Label::textColourId, Style::ink);
     label.setFont(Style::font(fontSize));
+    label.setBorderSize({});
+    label.setInterceptsMouseClicks(false, false);
 }
 
-void layoutRow(juce::Rectangle<int> bounds, std::initializer_list<juce::Component*> components)
+juce::Rectangle<int> takeTopRow(juce::Rectangle<int>& area)
 {
-    juce::FlexBox row;
-    row.flexDirection = juce::FlexBox::Direction::row;
+    auto top = area.removeFromTop((area.getHeight() - spacing) / 2);
+    area.removeFromTop(spacing);
+    return top;
+}
+
+juce::Rectangle<int> takeSelectorRow(juce::Rectangle<int>& content)
+{
+    auto row = content.removeFromTop(selectorRowHeight);
+    content.removeFromTop(spacing);
+    return row;
+}
+
+void layoutSelectorRow(juce::Rectangle<int> area, std::initializer_list<juce::Component*> components)
+{
     for (auto* c : components)
-        row.items.add(juce::FlexItem(*c).withFlex(1.0f));
-    row.performLayout(bounds);
+    {
+        const int width = dynamic_cast<LabeledToggle*>(c) != nullptr ? toggleColumnWidth : comboWidth;
+        c->setBounds(area.removeFromLeft(width));
+        area.removeFromLeft(spacing);
+    }
+}
+
+void layoutColumns(juce::Rectangle<int> area, std::initializer_list<juce::Component*> components, int maxColumnWidth)
+{
+    if (components.size() == 0)
+        return;
+
+    const int columnWidth = juce::jmin(maxColumnWidth, area.getWidth() / (int)components.size());
+    for (auto* c : components)
+        c->setBounds(area.removeFromLeft(columnWidth));
+}
+
+int sectionWidth(int contentWidth)
+{
+    return contentWidth + 2 * spacing;
+}
+
+//==============================================================================
+Section::Section(const juce::String& sectionTitle) : title(sectionTitle)
+{
+}
+
+juce::Rectangle<int> Section::getContentBounds() const
+{
+    auto content = getLocalBounds().reduced(spacing);
+    content.removeFromTop(titleHeight);
+    return content;
+}
+
+void Section::paint(juce::Graphics& g)
+{
+    g.setColour(Style::panel);
+    g.fillRoundedRectangle(getLocalBounds().toFloat(), cornerRadius);
+
+    g.setColour(Style::ink);
+    g.setFont(Style::font(Style::FontSize::medium));
+    g.drawText(title, getLocalBounds().reduced(spacing).removeFromTop(titleHeight), juce::Justification::centredLeft);
 }
 
 //==============================================================================
@@ -38,18 +92,30 @@ LabeledSlider::LabeledSlider(juce::AudioProcessorValueTreeState& apvts, const ju
     addAndMakeVisible(label);
 
     slider.setSliderStyle(style);
-    if (style == juce::Slider::LinearHorizontal)
-        slider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 50, 20);
-    else
-        slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 50, 20);
+    slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, textBoxWidth, textBoxHeight);
     addAndMakeVisible(slider);
 }
 
 void LabeledSlider::resized()
 {
     auto bounds = getLocalBounds();
-    label.setBounds(bounds.removeFromTop(labelHeight));
-    slider.setBounds(bounds);
+    // value boxes never wider than the column
+    const int boxWidth = juce::jmin(textBoxWidth, bounds.getWidth());
+    slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, boxWidth, textBoxHeight);
+
+    if (slider.getSliderStyle() == juce::Slider::LinearVertical)
+    {
+        // faders use the full height, so a taller section gives a longer throw
+        label.setBounds(bounds.removeFromTop(labelHeight));
+        slider.setBounds(bounds);
+        return;
+    }
+
+    // knobs are always the same size, the label/knob/value block is centred in whatever space is left
+    const int blockHeight = labelHeight + knobSize + textBoxHeight;
+    auto block = bounds.withSizeKeepingCentre(bounds.getWidth(), juce::jmin(blockHeight, bounds.getHeight()));
+    label.setBounds(block.removeFromTop(labelHeight));
+    slider.setBounds(block);
 }
 
 //==============================================================================
@@ -70,9 +136,9 @@ LabeledComboBox::LabeledComboBox(juce::AudioProcessorValueTreeState& apvts, cons
 
 void LabeledComboBox::resized()
 {
-    auto bounds = getLocalBounds();
-    label.setBounds(bounds.removeFromTop(labelHeight));
-    box.setBounds(bounds.withSizeKeepingCentre(bounds.getWidth(), juce::jmin(24, bounds.getHeight())));
+    auto block = getLocalBounds().withSizeKeepingCentre(getWidth(), labelHeight + comboHeight);
+    label.setBounds(block.removeFromTop(labelHeight));
+    box.setBounds(block);
 }
 
 //==============================================================================
@@ -86,32 +152,25 @@ LabeledToggle::LabeledToggle(juce::AudioProcessorValueTreeState& apvts, const ju
 
 void LabeledToggle::resized()
 {
-    auto bounds = getLocalBounds();
-    label.setBounds(bounds.removeFromTop(labelHeight));
-    // keep the tick box centred under the label
-    button.setBounds(bounds.withSizeKeepingCentre(24, 24));
+    // same block height as a combo box, so toggles and combos in a selector row line up
+    auto block = getLocalBounds().withSizeKeepingCentre(getWidth(), labelHeight + comboHeight);
+    label.setBounds(block.removeFromTop(labelHeight));
+    button.setBounds(block);
 }
 
 //==============================================================================
 EnvelopePanel::EnvelopePanel(juce::AudioProcessorValueTreeState& apvts, const juce::String& idPrefix, const juce::String& title)
-    : attack(apvts, idPrefix + ParamIDs::attack, "Attack"),
+    : Section(title),
+      attack(apvts, idPrefix + ParamIDs::attack, "Attack"),
       decay(apvts, idPrefix + ParamIDs::decay, "Decay"),
       sustain(apvts, idPrefix + ParamIDs::sustain, "Sustain"),
       release(apvts, idPrefix + ParamIDs::release, "Release")
 {
-    setupLabel(titleLabel, title, Style::FontSize::large, juce::Justification::left);
-    for (auto* c : std::initializer_list<juce::Component*> { &titleLabel, &attack, &decay, &sustain, &release })
+    for (auto* c : std::initializer_list<juce::Component*> { &attack, &decay, &sustain, &release })
         addAndMakeVisible(c);
-}
-
-void EnvelopePanel::paint(juce::Graphics& g)
-{
-    g.fillAll(Style::accent);
 }
 
 void EnvelopePanel::resized()
 {
-    auto bounds = getLocalBounds();
-    titleLabel.setBounds(bounds.removeFromTop(labelHeight).withTrimmedLeft(5));
-    layoutRow(bounds.reduced(5), { &attack, &decay, &sustain, &release });
+    layoutColumns(getContentBounds(), { &attack, &decay, &sustain, &release }, knobColumnWidth);
 }

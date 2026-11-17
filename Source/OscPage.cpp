@@ -11,79 +11,62 @@
 #include <JuceHeader.h>
 #include "OscPage.h"
 
-OscillatorPanel::OscillatorPanel(juce::AudioProcessorValueTreeState& apvts, const juce::String& title, const juce::String& waveID,
-                                 const juce::String& tuneID, const juce::String& tuneText, const juce::String& fineID)
-    : wave(apvts, waveID, "Wave"),
-      tune(apvts, tuneID, tuneText),
-      fine(apvts, fineID, "Fine")
-{
-    setupLabel(titleLabel, title, Style::FontSize::large, juce::Justification::left);
-    setupLabel(tuneLabel, "Tune", Style::FontSize::large, juce::Justification::left);
+using namespace Style::Layout;
 
-    for (auto* c : std::initializer_list<juce::Component*> { &titleLabel, &tuneLabel, &wave, &tune, &fine })
+OscillatorPanel::OscillatorPanel(juce::AudioProcessorValueTreeState& apvts, const juce::String& title, const juce::String& idPrefix)
+    : Section(title),
+      wave(apvts, idPrefix + ParamIDs::wave, "Wave"),
+      coarse(apvts, idPrefix + ParamIDs::coarse, "Coarse"),
+      fine(apvts, idPrefix + ParamIDs::fine, "Fine")
+{
+    for (auto* c : std::initializer_list<juce::Component*> { &wave, &coarse, &fine })
         addAndMakeVisible(c);
-}
-
-void OscillatorPanel::paint(juce::Graphics& g)
-{
-    g.fillAll(Style::background2);
-
-    g.setColour(Style::accent);
-    g.fillRect(tuneArea);
 }
 
 void OscillatorPanel::resized()
 {
-    auto bounds = getLocalBounds();
-    const int gap = 10;
-
-    // wave selector and title
-    auto leftMost = bounds.removeFromLeft(80);
-    titleLabel.setBounds(leftMost.removeFromBottom(30));
-    wave.setBounds(leftMost.removeFromTop(50));
-
-    bounds.removeFromLeft(gap);
-
-    // tuning section
-    tuneArea = bounds;
-    auto tuneBounds = tuneArea;
-    tuneLabel.setBounds(tuneBounds.removeFromTop(20).withTrimmedLeft(5));
-    layoutRow(tuneBounds.reduced(5), { &tune, &fine });
+    auto content = getContentBounds();
+    layoutSelectorRow(takeSelectorRow(content), { &wave });
+    layoutColumns(content, { &coarse, &fine }, knobColumnWidth);
 }
 
 //==============================================================================
 OscPage::OscPage(juce::AudioProcessorValueTreeState& apvts)
-    : osc1(apvts, "OSC1", ParamIDs::osc1 + ParamIDs::wave, ParamIDs::osc1 + ParamIDs::coarse, "Coarse", ParamIDs::osc1 + ParamIDs::fine),
-      osc2(apvts, "OSC2", ParamIDs::osc2 + ParamIDs::wave, ParamIDs::osc2 + ParamIDs::coarse, "Coarse", ParamIDs::osc2 + ParamIDs::fine),
-      ampEnvelope(apvts, ParamIDs::amp, "Amp"),
+    : osc1(apvts, "OSC 1", ParamIDs::osc1),
+      osc2(apvts, "OSC 2", ParamIDs::osc2),
+      ampEnvelope(apvts, ParamIDs::amp, "AMP ENVELOPE"),
       voiceMode(apvts, ParamIDs::voiceMode, "Voice"),
-      mix(apvts, ParamIDs::oscMix, "Mix", juce::Slider::LinearHorizontal),
-      glide(apvts, ParamIDs::glideTime, "Glide", juce::Slider::LinearHorizontal),
-      masterGain(apvts, ParamIDs::masterGain, "Master", juce::Slider::LinearHorizontal)
+      mix(apvts, ParamIDs::oscMix, "Mix", juce::Slider::LinearVertical),
+      glide(apvts, ParamIDs::glideTime, "Glide", juce::Slider::LinearVertical),
+      masterGain(apvts, ParamIDs::masterGain, "Master", juce::Slider::LinearVertical)
 {
-    for (auto* c : std::initializer_list<juce::Component*> { &osc1, &osc2, &ampEnvelope, &voiceMode, &mix, &glide, &masterGain })
+    for (auto* c : std::initializer_list<juce::Component*> { &osc1, &osc2, &ampEnvelope, &globalSection })
         addAndMakeVisible(c);
+
+    for (auto* c : std::initializer_list<juce::Component*> { &voiceMode, &mix, &glide, &masterGain })
+        globalSection.addAndMakeVisible(c);
 }
 
 void OscPage::paint(juce::Graphics& g)
 {
-    g.fillAll(Style::background2);
+    g.fillAll(Style::page);
 }
 
 void OscPage::resized()
 {
-    auto bounds = getLocalBounds().reduced(10);
-    const int gap = 10;
-    const int rowHeight = (bounds.getHeight() - 2 * gap) / 5;
+    auto bounds = getLocalBounds().reduced(spacing);
 
-    auto oscRow = bounds.removeFromTop(rowHeight * 2);
-    bounds.removeFromTop(gap);
-    osc1.setBounds(oscRow.removeFromLeft((oscRow.getWidth() - gap) / 2));
-    oscRow.removeFromLeft(gap);
-    osc2.setBounds(oscRow);
+    auto topRow = takeTopRow(bounds);
+    osc1.setBounds(topRow.removeFromLeft((topRow.getWidth() - spacing) / 2));
+    topRow.removeFromLeft(spacing);
+    osc2.setBounds(topRow);
 
-    ampEnvelope.setBounds(bounds.removeFromTop(rowHeight * 2));
-    bounds.removeFromTop(gap);
+    // global gets exactly enough room for its three faders, the envelope takes the rest
+    globalSection.setBounds(bounds.removeFromRight(sectionWidth(3 * faderColumnWidth)));
+    bounds.removeFromRight(spacing);
+    ampEnvelope.setBounds(bounds);
 
-    layoutRow(bounds, { &voiceMode, &mix, &glide, &masterGain });
+    auto globalContent = globalSection.getContentBounds();
+    layoutSelectorRow(takeSelectorRow(globalContent), { &voiceMode });
+    layoutColumns(globalContent, { &mix, &glide, &masterGain }, faderColumnWidth);
 }

@@ -14,6 +14,7 @@
 #include "UiHelpers.h"
 
 //==============================================================================
+// top row: filter type and cutoff controls. bottom row: the filter envelope
 class FilterPage  : public juce::Component
 {
 public:
@@ -23,12 +24,11 @@ public:
     void resized() override;
 
 private:
-    juce::Label titleLabel;
+    Section filterSection { "FILTER" };
     LabeledComboBox type;
     LabeledSlider cutoff, resonance, envAmount, keytrack;
-    EnvelopePanel filterEnvelope;
 
-    juce::Rectangle<int> filterArea;
+    EnvelopePanel filterEnvelope;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FilterPage)
 };

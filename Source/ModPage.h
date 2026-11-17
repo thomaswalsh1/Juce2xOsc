@@ -15,6 +15,7 @@
 #include "UiHelpers.h"
 
 //==============================================================================
+// top row: the lfo. bottom row: velocity routing
 class ModPage  : public juce::Component
 {
 public:
@@ -24,20 +25,17 @@ public:
     void resized() override;
 
 private:
-    juce::Label lfoTitle;
+    Section lfoSection { "LFO" };
     LabeledComboBox lfoWave;
     LabeledToggle lfoSync, lfoFreeRun;
     LabeledSlider lfoRate, lfoToPitch, lfoToCutoff, lfoToFmIndex, lfoModWheel;
-    // shares the rate knob's spot, only one of the two is visible
+    // shares the rate knob's column, only one of the two is visible
     LabeledComboBox lfoSyncRate;
     // swaps the rate knob and the sync rate box whenever sync changes, including from the host
     juce::ParameterAttachment lfoSyncListener;
 
-    juce::Label velocityTitle;
+    Section velocitySection { "VELOCITY" };
     LabeledSlider velToAmp, velToCutoff, velToFmIndex;
-
-    juce::Rectangle<int> lfoArea;
-    juce::Rectangle<int> velocityArea;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ModPage)
 };

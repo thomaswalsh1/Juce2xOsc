@@ -32,6 +32,7 @@ public:
     // jump to a phase from outside (free running / bar locked). Small corrections every block,
     // so a big backwards jump means the cycle wrapped and S&H should take a new step
     void setPhase(float newPhase) {
+        // TN: If we are closer to the nexg phase
         if (newPhase < phase - 0.5f)
             heldValue = nextRandom();
         phase = newPhase;
@@ -49,6 +50,7 @@ public:
         }
 
         phase += increment;
+        // TN: If phase is now greater than 1
         if (phase >= 1.0f) {
             phase -= 1.0f;
             heldValue = nextRandom(); // new step every cycle
@@ -61,6 +63,7 @@ private:
     LfoWaveform waveform = LfoWaveform::Sine;
     double sampleRate = 44100.0;
     float phase = 0.0f;
+    // TN: increment is how far into the cycle it is during the current Sample
     float increment = 0.0f;
     float heldValue = 0.0f;
     juce::Random random;
