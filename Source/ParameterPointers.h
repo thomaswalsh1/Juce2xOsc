@@ -81,6 +81,17 @@ struct ParameterPointers {
     std::atomic<float>* filterEnvAmount = nullptr;
     std::atomic<float>* filterKeytrack = nullptr;
 
+    std::atomic<float>* lfoWave = nullptr;
+    std::atomic<float>* lfoRate = nullptr;
+    std::atomic<float>* lfoToPitch = nullptr;
+    std::atomic<float>* lfoToCutoff = nullptr;
+    std::atomic<float>* lfoToFmIndex = nullptr;
+    std::atomic<float>* lfoModWheel = nullptr;
+
+    std::atomic<float>* velToAmp = nullptr;
+    std::atomic<float>* velToCutoff = nullptr;
+    std::atomic<float>* velToFmIndex = nullptr;
+
     std::atomic<float>* mix = nullptr;
     std::atomic<float>* glideTime = nullptr;
     std::atomic<float>* masterGain = nullptr;
@@ -106,6 +117,17 @@ struct ParameterPointers {
         filterEnvAmount = get(state, ParamIDs::filterEnvAmount);
         filterKeytrack = get(state, ParamIDs::filterKeytrack);
 
+        lfoWave = get(state, ParamIDs::lfoWave);
+        lfoRate = get(state, ParamIDs::lfoRate);
+        lfoToPitch = get(state, ParamIDs::lfoToPitch);
+        lfoToCutoff = get(state, ParamIDs::lfoToCutoff);
+        lfoToFmIndex = get(state, ParamIDs::lfoToFmIndex);
+        lfoModWheel = get(state, ParamIDs::lfoModWheel);
+
+        velToAmp = get(state, ParamIDs::velToAmp);
+        velToCutoff = get(state, ParamIDs::velToCutoff);
+        velToFmIndex = get(state, ParamIDs::velToFmIndex);
+
         mix = get(state, ParamIDs::oscMix);
         glideTime = get(state, ParamIDs::glideTime);
         masterGain = get(state, ParamIDs::masterGain);
@@ -130,6 +152,17 @@ struct ParameterPointers {
         p.filter.resonance = filterResonance->load();
         p.filter.envAmount = filterEnvAmount->load();
         p.filter.keytrack = filterKeytrack->load();
+
+        p.lfo.wave = (int)lfoWave->load();
+        p.lfo.rate = lfoRate->load();
+        p.lfo.toPitch = lfoToPitch->load();
+        p.lfo.toCutoff = lfoToCutoff->load();
+        p.lfo.toFmIndex = lfoToFmIndex->load();
+        p.lfo.modWheel = lfoModWheel->load();
+
+        p.velocity.toAmp = velToAmp->load();
+        p.velocity.toCutoff = velToCutoff->load();
+        p.velocity.toFmIndex = velToFmIndex->load();
 
         p.mix = mix->load();
         p.glideTime = glideTime->load();

@@ -16,6 +16,7 @@
 #include "OscPage.h"
 #include "FmPage.h"
 #include "FilterPage.h"
+#include "ModPage.h"
 
 // oscillators and the fm modulator
 class OscillatorTabs : public juce::TabbedComponent
@@ -44,10 +45,11 @@ class EffectsTabs : public juce::TabbedComponent
 {
 public:
     EffectsTabs(juce::AudioProcessorValueTreeState& apvts)
-        : juce::TabbedComponent(juce::TabbedButtonBar::TabsAtTop), filterPage(apvts)
+        : juce::TabbedComponent(juce::TabbedButtonBar::TabsAtTop), filterPage(apvts), modPage(apvts)
     {
         setTabBarDepth(20);
         addTab("Filter", Style::accent, &filterPage, false);
+        addTab("Mod", Style::accent, &modPage, false);
         setCurrentTabIndex(0, false);
     }
 
@@ -57,4 +59,5 @@ public:
 
 private:
     FilterPage filterPage;
+    ModPage modPage;
 };

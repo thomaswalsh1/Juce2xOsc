@@ -21,6 +21,7 @@ void SynthVoice::prepareToPlay(double newSampleRate, int samplesPerBlock) {
     ampEnv.prepare(sampleRate);
     filterEnv.prepare(sampleRate);
     fmEnv.prepare(sampleRate);
+    lfo.prepare(sampleRate);
 
     // the voice is mono until something (pan, unison) makes the two sides differ
     juce::dsp::ProcessSpec spec { sampleRate, (juce::uint32)samplesPerBlock, 1 };
@@ -44,10 +45,12 @@ static float wheelToSemitones(int wheelValue) {
     return (wheelValue - 8192) / 8192.0f * SynthConstants::pitchBendRangeSemitones;
 }
 
-void SynthVoice::startNote(int midiNoteNumber, float velocity, juce::SynthesiserSound*, int currentPitchWheelPosition) {
+void SynthVoice::startNote(int midiNoteNumber, float noteVelocity, juce::SynthesiserSound*, int currentPitchWheelPosition) {
     applyParams();
 
-    level = velocity;
+    velocity = noteVelocity;
+    // velocity sensitivity: at 0 every note is full volume, at 1 volume follows velocity
+    level = 1.0f - params.velocity.toAmp + params.velocity.toAmp * velocity;
     keytrackOctaves = (midiNoteNumber - 60) / 12.0f;
 
     // glide from whatever note was played before this one
@@ -64,6 +67,7 @@ void SynthVoice::startNote(int midiNoteNumber, float velocity, juce::Synthesiser
     modulator.startNote(from, noteTarget, glideSeconds);
 
     filter.reset();
+    lfo.reset();
     ampEnv.noteOn();
     filterEnv.noteOn();
     fmEnv.noteOn();
@@ -100,19 +104,32 @@ void SynthVoice::renderNextBlock(juce::AudioBuffer<float>& outputBuffer, int sta
     const bool fmToOsc2 = params.mod.toOsc2;
     const int numChannels = outputBuffer.getNumChannels();
 
+    const auto& lfoParams = params.lfo;
+    // the mod wheel fades the lfo in, fully when lfo modWheel is 1
+    const float lfoDepth = 1.0f - lfoParams.modWheel + lfoParams.modWheel * engine.getModWheel();
+    // velocity is fixed for the note, so its contributions are constant across the block
+    const float velocityCutoffOctaves = velocity * params.velocity.toCutoff;
+    const float velocityFmIndex = velocity * params.velocity.toFmIndex;
+
     for (int s = 0; s < numSamples; ++s)
     {
-        // phase modulation: index is in radians, the oscillators take cycles
-        const float modSample = modulator.processSample() * fmEnv.getNextSample();
-        const float phaseOffset = fmIndexSmoothed.getNextValue() * modSample / juce::MathConstants<float>::twoPi;
+        const float lfoValue = lfo.processSample() * lfoDepth;
+        const float pitchRatio = lfoParams.toPitch > 0.0f ? std::exp2(lfoValue * lfoParams.toPitch / 12.0f) : 1.0f;
 
-        const float c1 = carriers[0].processSample(fmToOsc1 ? phaseOffset : 0.0f);
-        const float c2 = carriers[1].processSample(fmToOsc2 ? phaseOffset : 0.0f);
+        // phase modulation: index is in radians, the oscillators take cycles
+        const float fmIndex = juce::jmax(0.0f, fmIndexSmoothed.getNextValue() + lfoValue * lfoParams.toFmIndex + velocityFmIndex);
+        // the modulator gets the vibrato too, so the fm ratio stays constant
+        const float modSample = modulator.processSample(0.0f, pitchRatio) * fmEnv.getNextSample();
+        const float phaseOffset = fmIndex * modSample / juce::MathConstants<float>::twoPi;
+
+        const float c1 = carriers[0].processSample(fmToOsc1 ? phaseOffset : 0.0f, pitchRatio);
+        const float c2 = carriers[1].processSample(fmToOsc2 ? phaseOffset : 0.0f, pitchRatio);
         const float m = mixSmoothed.getNextValue();
         // TN: Calculate Mixed Value
         float sample = c1 * (1.0f - m) + c2 * m;
 
-        filter.setCutoffFrequency(computeCutoff(filterEnv.getNextSample()));
+        const float extraCutoffOctaves = lfoValue * lfoParams.toCutoff + velocityCutoffOctaves;
+        filter.setCutoffFrequency(computeCutoff(filterEnv.getNextSample(), extraCutoffOctaves));
         sample = filter.processSample(0, sample);
 
         sample *= ampEnv.getNextSample() * level * SynthConstants::outputGain;
@@ -153,6 +170,9 @@ void SynthVoice::applyParams() {
     }
     filter.setResonance(params.filter.resonance);
 
+    lfo.setWaveform(static_cast<LfoWaveform>(params.lfo.wave));
+    lfo.setRate(params.lfo.rate);
+
     mixSmoothed.setTargetValue(params.mix);
     fmIndexSmoothed.setTargetValue(params.mod.index);
     cutoffSmoothed.setTargetValue(params.filter.cutoff);
@@ -165,8 +185,8 @@ void SynthVoice::setBendOnAll(float bendSemitones) {
     modulator.setBend(bendSemitones);
 }
 
-float SynthVoice::computeCutoff(float filterEnvValue) {
-    const float octaves = filterEnvValue * params.filter.envAmount + keytrackOctaves * params.filter.keytrack;
+float SynthVoice::computeCutoff(float filterEnvValue, float extraOctaves) {
+    const float octaves = filterEnvValue * params.filter.envAmount + keytrackOctaves * params.filter.keytrack + extraOctaves;
     const float cutoff = cutoffSmoothed.getNextValue() * std::exp2(octaves);
     return juce::jlimit(SynthConstants::minCutoffHz, SynthConstants::maxCutoffRatio * (float)sampleRate, cutoff);
 }

@@ -15,6 +15,7 @@
 #pragma once
 #include <JuceHeader.h>
 #include "Envelope.h"
+#include "Lfo.h"
 #include "Oscillator.h"
 #include "Parameters.h"
 #include "SynthEngine.h"
@@ -25,7 +26,7 @@ public:
 
     void prepareToPlay(double sampleRate, int samplesPerBlock);
     bool canPlaySound(juce::SynthesiserSound* sound) override;
-    void startNote(int midiNoteNumber, float velocity, juce::SynthesiserSound* sound, int currentPitchWheelPosition) override;
+    void startNote(int midiNoteNumber, float noteVelocity, juce::SynthesiserSound* sound, int currentPitchWheelPosition) override;
     void stopNote(float velocity, bool allowTailOff) override;
     void pitchWheelMoved(int newPitchWheelValue) override;
     void controllerMoved(int controllerNumber, int newControllerValue) override;
@@ -44,6 +45,7 @@ private:
     Oscillator modulator;
 
     Envelope ampEnv, filterEnv, fmEnv;
+    Lfo lfo;
     juce::dsp::StateVariableTPTFilter<float> filter;
 
     juce::SmoothedValue<float> mixSmoothed;
@@ -51,11 +53,12 @@ private:
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Multiplicative> cutoffSmoothed { 20000.0f };
 
     double sampleRate = 44100.0;
-    float level = 0.0f;
+    float velocity = 0.0f;          // 0..1, from the note on
+    float level = 0.0f;             // amp gain from velocity, set on note on
     float keytrackOctaves = 0.0f;   // note distance from middle C, for filter keytracking
 
     // pulls the latest block's parameters into the oscillators, envelopes and smoothers
     void applyParams();
     void setBendOnAll(float bendSemitones);
-    float computeCutoff(float filterEnvValue);
+    float computeCutoff(float filterEnvValue, float extraOctaves);
 };

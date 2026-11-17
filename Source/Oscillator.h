@@ -30,10 +30,10 @@ public:
 
     void startNote(float fromHz, float toHz, float glideSeconds);
 
-    // phaseOffset is in cycles (1.0 = one full period)
-    float processSample(float phaseOffset = 0.0f) {
+    // phaseOffset is in cycles (1.0 = one full period), pitchRatio scales the frequency (lfo vibrato)
+    float processSample(float phaseOffset = 0.0f, float pitchRatio = 1.0f) {
         // TN: freq = midi * offset/detune * mod
-        const float frequency = noteFrequency.getNextValue() * offsetRatio.getNextValue() * frequencyMultiplier.getNextValue();
+        const float frequency = noteFrequency.getNextValue() * offsetRatio.getNextValue() * frequencyMultiplier.getNextValue() * pitchRatio;
         // TN: increment is how much this moves forward by 
         const float increment = juce::jlimit(0.0f, 0.5f, frequency / (float)sampleRate);
 

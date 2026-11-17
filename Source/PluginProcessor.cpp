@@ -243,6 +243,19 @@ juce::AudioProcessorValueTreeState::ParameterLayout _2xOscSynthAudioProcessor::c
     layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::filterEnvAmount, 1 }, "Filter Env Amount", Range(-4.0f, 4.0f, 0.01f), 0.0f));
     layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::filterKeytrack, 1 }, "Filter Keytrack", Range(0.0f, 1.0f, 0.01f), 0.0f));
 
+    // lfo
+    layout.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID{ ParamIDs::lfoWave, 1 }, "LFO Wave", lfoWaveformNames, 0));
+    layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::lfoRate, 1 }, "LFO Rate", Range(0.05f, 20.0f, 0.01f, 0.3f), 5.0f));
+    layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::lfoToPitch, 1 }, "LFO to Pitch", Range(0.0f, 12.0f, 0.01f, 0.4f), 0.0f));
+    layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::lfoToCutoff, 1 }, "LFO to Cutoff", Range(0.0f, 4.0f, 0.01f), 0.0f));
+    layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::lfoToFmIndex, 1 }, "LFO to FM Index", Range(0.0f, 10.0f, 0.01f), 0.0f));
+    layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::lfoModWheel, 1 }, "LFO Mod Wheel", Range(0.0f, 1.0f, 0.01f), 0.0f));
+
+    // velocity
+    layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::velToAmp, 1 }, "Velocity to Amp", Range(0.0f, 1.0f, 0.01f), 1.0f));
+    layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::velToCutoff, 1 }, "Velocity to Cutoff", Range(0.0f, 4.0f, 0.01f), 0.0f));
+    layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::velToFmIndex, 1 }, "Velocity to FM Index", Range(0.0f, 10.0f, 0.01f), 0.0f));
+
     // global
     layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::oscMix, 1 }, "Osc Mix", 0.0f, 1.0f, 0.5f));
     layout.add(std::make_unique<Float>(juce::ParameterID{ ParamIDs::glideTime, 1 }, "Glide Time", Range(0.0f, 2.0f, 0.001f, 0.4f), 0.0f));

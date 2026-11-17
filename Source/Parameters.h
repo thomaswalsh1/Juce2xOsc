@@ -45,6 +45,19 @@ namespace ParamIDs {
     inline const juce::String filterEnvAmount = "FILTER_ENV_AMOUNT";
     inline const juce::String filterKeytrack = "FILTER_KEYTRACK";
 
+    // lfo
+    inline const juce::String lfoWave = "LFO_WAVE";
+    inline const juce::String lfoRate = "LFO_RATE";
+    inline const juce::String lfoToPitch = "LFO_TO_PITCH";
+    inline const juce::String lfoToCutoff = "LFO_TO_CUTOFF";
+    inline const juce::String lfoToFmIndex = "LFO_TO_FM_INDEX";
+    inline const juce::String lfoModWheel = "LFO_MODWHEEL";
+
+    // velocity
+    inline const juce::String velToAmp = "VEL_TO_AMP";
+    inline const juce::String velToCutoff = "VEL_TO_CUTOFF";
+    inline const juce::String velToFmIndex = "VEL_TO_FM_INDEX";
+
     // global
     inline const juce::String oscMix = "OSC_MIX";
     inline const juce::String glideTime = "GLIDE_TIME";
@@ -73,8 +86,15 @@ enum FilterType
     LowPass, BandPass, HighPass
 };
 
+// scoped, since the names overlap with WaveformType
+enum class LfoWaveform
+{
+    Sine, Triangle, Saw, Square, SampleAndHold
+};
+
 inline const juce::StringArray waveformNames { "Sine", "Saw", "Square" };
 inline const juce::StringArray filterTypeNames { "Low Pass", "Band Pass", "High Pass" };
+inline const juce::StringArray lfoWaveformNames { "Sine", "Triangle", "Saw", "Square", "S&H" };
 
 struct OscParameters {
     int wave = 0;
@@ -106,6 +126,21 @@ struct FilterParameters {
     float keytrack = 0.0f;      // 0 = none, 1 = cutoff follows the note fully
 };
 
+struct LfoParameters {
+    int wave = 0;
+    float rate = 5.0f;          // Hz
+    float toPitch = 0.0f;       // semitones
+    float toCutoff = 0.0f;      // octaves
+    float toFmIndex = 0.0f;     // radians
+    float modWheel = 0.0f;      // 0 = full depth always, 1 = depth set entirely by the mod wheel
+};
+
+struct VelocityParameters {
+    float toAmp = 1.0f;         // 0 = every note equally loud, 1 = fully velocity sensitive
+    float toCutoff = 0.0f;      // octaves at full velocity
+    float toFmIndex = 0.0f;     // radians at full velocity
+};
+
 // everything the voices need, loaded once per block by the processor
 // TN: Osc Parameters are 
 struct SynthParams {
@@ -113,6 +148,8 @@ struct SynthParams {
     ModulatorParameters mod;
     EnvelopeParameters amp, filterEnv, fmEnv;
     FilterParameters filter;
+    LfoParameters lfo;
+    VelocityParameters velocity;
     float mix = 0.5f;
     float glideTime = 0.0f;
     float masterGainDb = 0.0f;
